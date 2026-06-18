@@ -1,0 +1,12 @@
+venv/
+runtime/
+models/
+hf/
+__pycache__/
+*.log
+server.out.log
+server.err.log
+history.json
+resp.json
+_vps_ytdlp_test.py
+.git/

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcritor de Vídeos — Clavis Renato</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: {
+        naval:'#113C58', noite:'#042C48', ceu:'#7DA4C6', 'ceu-claro':'#B5D4E8', gelo:'#EBF7FA',
+        ink:{50:'#F6FBFC',100:'#EBF7FA',200:'#D6E7F1',300:'#B5D4E8',400:'#7DA4C6',500:'#3D6889',600:'#27557A',700:'#113C58',800:'#0A3450',900:'#042C48'},
+        'page-bg':'#FAFCFD', border:{DEFAULT:'#E4EEF3',strong:'#CFDEE7'},
+        success:{DEFAULT:'#10B981',fg:'#065F46',bg:'#D1FAE5'}, warn:{DEFAULT:'#F59E0B',fg:'#92400E',bg:'#FEF3C7'},
+        danger:{DEFAULT:'#EF4444',fg:'#991B1B',bg:'#FEE2E2'}, info:{DEFAULT:'#7DA4C6',fg:'#113C58',bg:'#EBF7FA'},
+      },
+      fontFamily:{ sans:['Saira','-apple-system','Segoe UI','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] },
+      boxShadow:{ sm:'0 1px 2px rgba(4,44,72,0.06), 0 1px 3px rgba(4,44,72,0.04)', md:'0 4px 12px rgba(4,44,72,0.08), 0 2px 4px rgba(4,44,72,0.04)', lg:'0 10px 30px rgba(4,44,72,0.12), 0 4px 10px rgba(4,44,72,0.06)' },
+    }}
+  }
+</script>
+<style>
+  html, body { font-family:'Saira',system-ui,sans-serif; }
+  .mono { font-family:'JetBrains Mono',monospace; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:#CFDEE7; border-radius:999px; border:2px solid #FAFCFD; }
+  .nav-sub.active { background:rgba(255,255,255,0.12); border-left:3px solid #fff; }
+  .spin { animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  .fade-up { animation:fadeUp .35s ease both; }
+  .source-btn[data-active="true"] { border-color:#113C58; background:#EBF7FA; color:#113C58; }
+</style>
+</head>
+<body class="bg-page-bg text-ink-900 antialiased">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-[220px] bg-naval text-white flex flex-col fixed h-screen">
+    <div class="px-5 py-5 flex items-center gap-3 border-b border-white/10">
+      <div class="w-9 h-9 rounded-lg bg-white text-naval flex items-center justify-center font-extrabold text-lg">N</div>
+      <div class="leading-tight">
+        <div class="font-bold text-[15px]">Clavis</div>
+        <div class="text-[10px] uppercase tracking-[0.12em] text-ceu">Renato</div>
+      </div>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-3 text-[13.5px]">
+      <div class="px-5 pt-2 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Fé</div>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="book-open" class="w-[18px] h-[18px]"></i>Devocional Diário</a>
+      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Família</div>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="shopping-basket" class="w-[18px] h-[18px]"></i>Despensa</a>
+      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Saúde</div>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="syringe" class="w-[18px] h-[18px]"></i>Peso</a>
+      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Finanças</div>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="receipt" class="w-[18px] h-[18px]"></i>Boletos Pessoais</a>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="brain" class="w-[18px] h-[18px]"></i>Conselheiro IA</a>
+      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Vida</div>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="map" class="w-[18px] h-[18px]"></i>Atlas de Viagens</a>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="network" class="w-[18px] h-[18px]"></i>Árvore Genealógica</a>
+      <a class="nav-sub active flex items-center gap-3 px-5 py-2 text-white font-medium"><i data-lucide="captions" class="w-[18px] h-[18px]"></i>Transcritor</a>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="calendar-clock" class="w-[18px] h-[18px]"></i>Próximos Compromissos</a>
+      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Norte</div>
+      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="compass" class="w-[18px] h-[18px]"></i>PEP</a>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/10 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center font-semibold">R</div>
+      <div class="min-w-0"><div class="text-[13px] font-medium truncate">Renato</div><div class="text-[11px] text-ceu truncate">renato@napel.com.br</div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 ml-[220px]">
+    <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-border px-7 py-4 flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-1.5 text-[12px] text-ink-500 mb-1"><span>Vida</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i><span class="text-ink-700">Transcritor</span></div>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-[24px] font-bold tracking-[-0.015em] text-ink-900">Transcritor de Vídeos</h1>
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-success-bg text-success-fg">Demo real</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-[12px] text-ink-500"><i data-lucide="cpu" class="w-4 h-4"></i><span class="mono">faster-whisper · local · custo zero</span></div>
+    </header>
+
+    <div class="p-7 max-w-[1100px] mx-auto space-y-5">
+
+      <!-- ENTRADA -->
+      <section class="bg-white rounded-xl border border-border shadow-sm p-6">
+        <h2 class="text-[18px] font-semibold tracking-[-0.01em] mb-4 flex items-center gap-2"><i data-lucide="link-2" class="w-[18px] h-[18px] text-ceu"></i>Nova transcrição</h2>
+
+        <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Plataforma</label>
+        <div class="flex gap-2 mt-1.5 mb-4">
+          <button class="source-btn flex items-center gap-2 px-3.5 py-2 rounded-lg border border-border-strong text-[13px] text-ink-600 hover:bg-gelo transition" data-active="true" data-fonte="TikTok" onclick="setSource(this)"><i data-lucide="music-2" class="w-4 h-4"></i>TikTok</button>
+          <button class="source-btn flex items-center gap-2 px-3.5 py-2 rounded-lg border border-border-strong text-[13px] text-ink-600 hover:bg-gelo transition" data-fonte="YouTube" onclick="setSource(this)"><i data-lucide="youtube" class="w-4 h-4"></i>YouTube</button>
+          <button class="source-btn flex items-center gap-2 px-3.5 py-2 rounded-lg border border-border-strong text-[13px] text-ink-600 hover:bg-gelo transition" data-fonte="Instagram" onclick="setSource(this)"><i data-lucide="instagram" class="w-4 h-4"></i>Instagram</button>
+          <button class="source-btn flex items-center gap-2 px-3.5 py-2 rounded-lg border border-border-strong text-[13px] text-ink-600 hover:bg-gelo transition" data-fonte="Outro" onclick="setSource(this)"><i data-lucide="globe" class="w-4 h-4"></i>Outro</button>
+        </div>
+
+        <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Link do vídeo</label>
+        <div class="relative mt-1.5">
+          <i data-lucide="link" class="w-4 h-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input id="urlInput" type="text" class="w-full h-[42px] pl-9 pr-3 rounded-md border border-border-strong text-[13.5px] mono text-ink-800 focus:outline-none focus:border-naval focus:ring-2 focus:ring-ceu/30" placeholder="Cole aqui o link do vídeo…">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Modelo Whisper</label>
+            <select id="modelSel" class="w-full h-[42px] mt-1.5 px-3 rounded-md border border-border-strong text-[13.5px] text-ink-800 bg-white focus:outline-none focus:border-naval">
+              <option value="tiny">tiny · rapidíssimo (75 MB)</option>
+              <option value="base">base · rápido (145 MB)</option>
+              <option value="small" selected>small · recomendado PT-BR (480 MB)</option>
+              <option value="medium">medium · ótimo (1.5 GB)</option>
+              <option value="large-v3">large-v3 · máxima qualidade (3 GB)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Idioma</label>
+            <select id="langSel" class="w-full h-[42px] mt-1.5 px-3 rounded-md border border-border-strong text-[13.5px] text-ink-800 bg-white focus:outline-none focus:border-naval">
+              <option value="auto" selected>Detectar automaticamente</option>
+              <option value="pt">Português (forçar)</option>
+              <option value="en">Inglês (forçar)</option>
+              <option value="es">Espanhol (forçar)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-5">
+          <span class="text-[12px] text-ink-500 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-success"></i>Processado localmente — nada sai do seu computador</span>
+          <button id="btnTranscrever" onclick="runTranscricao()" class="inline-flex items-center gap-2 px-5 h-[42px] bg-naval hover:bg-noite text-white text-[14px] font-semibold rounded-md shadow-sm transition"><i data-lucide="sparkles" class="w-[18px] h-[18px]"></i>Transcrever</button>
+        </div>
+      </section>
+
+      <!-- PROCESSANDO -->
+      <section id="processing" class="hidden bg-white rounded-xl border border-border shadow-sm p-6 fade-up">
+        <div class="flex items-center gap-3">
+          <i data-lucide="loader-2" class="w-5 h-5 text-naval spin"></i>
+          <div>
+            <h2 id="procTitle" class="text-[16px] font-semibold tracking-[-0.01em]">Iniciando…</h2>
+            <p class="text-[12.5px] text-ink-500 mt-0.5">A 1ª vez com cada modelo baixa os pesos do Whisper — pode levar de alguns segundos a poucos minutos. Decorrido: <span id="elapsed" class="mono text-ink-700">0s</span></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ERRO -->
+      <section id="errorBox" class="hidden bg-danger-bg border-l-[3px] border-danger rounded-md px-5 py-3 flex items-start gap-2.5 fade-up">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-danger mt-0.5"></i>
+        <div><div class="text-[14px] font-medium text-danger-fg">Não foi possível transcrever</div><div id="errorMsg" class="text-[13px] text-danger-fg/90 mt-0.5"></div></div>
+      </section>
+
+      <!-- RESULTADO -->
+      <section id="result" class="hidden bg-white rounded-xl border border-border shadow-sm overflow-hidden fade-up">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-ink-50">
+          <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-[18px] h-[18px] text-success"></i><h2 class="text-[18px] font-semibold tracking-[-0.01em]">Transcrição pronta</h2></div>
+          <div class="flex items-center gap-2">
+            <button onclick="copyText()" class="inline-flex items-center gap-1.5 px-3 h-[34px] border border-border-strong rounded-md text-[13px] text-naval hover:bg-gelo transition"><i data-lucide="copy" class="w-4 h-4"></i>Copiar</button>
+            <button onclick="downloadTxt()" class="inline-flex items-center gap-1.5 px-3 h-[34px] bg-naval text-white rounded-md text-[13px] hover:bg-noite transition"><i data-lucide="download" class="w-4 h-4"></i>Baixar .txt</button>
+          </div>
+        </div>
+        <div id="resultTitle" class="px-6 pt-4 text-[14px] font-medium text-ink-700"></div>
+        <div id="resultMeta" class="flex flex-wrap gap-2 px-6 pt-3"></div>
+        <div id="transcriptBox" class="px-6 py-5 text-[14px] leading-[1.7] text-ink-800 whitespace-pre-wrap"></div>
+      </section>
+
+      <!-- HISTÓRICO -->
+      <section class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 class="text-[18px] font-semibold tracking-[-0.01em] flex items-center gap-2"><i data-lucide="history" class="w-[18px] h-[18px] text-ceu"></i>Histórico</h2>
+          <button onclick="clearHistory()" class="inline-flex items-center gap-1.5 px-3 h-[34px] border border-border-strong rounded-md text-[13px] text-ink-600 hover:bg-gelo transition"><i data-lucide="trash-2" class="w-4 h-4"></i>Limpar</button>
+        </div>
+        <div id="historyBody"></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast" class="hidden fixed bottom-6 right-6 bg-white rounded-lg shadow-lg border-l-[3px] border-success px-4 py-3 flex items-center gap-2.5 text-[13.5px] min-w-[280px]">
+  <i data-lucide="check-circle-2" class="w-5 h-5 text-success"></i><span id="toastMsg"></span>
+</div>
+
+<script>
+  lucide.createIcons();
+  let currentText = "";
+  let currentTitle = "";
+  let elapsedTimer = null;
+
+  function setSource(btn){ document.querySelectorAll('.source-btn').forEach(b=>b.dataset.active='false'); btn.dataset.active='true'; }
+  function activeFonte(){ const b=document.querySelector('.source-btn[data-active="true"]'); return b?b.dataset.fonte:'Outro'; }
+
+  function fmtDur(s){ s=Math.round(s||0); const m=Math.floor(s/60), r=s%60; return m+':'+String(r).padStart(2,'0'); }
+  const LANG = { pt:'Português', en:'Inglês', es:'Espanhol', fr:'Francês', it:'Italiano', de:'Alemão' };
+  function langName(c){ return LANG[c] || (c||'').toUpperCase(); }
+
+  function toast(msg){ const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500); }
+
+  async function runTranscricao(){
+    const url = document.getElementById('urlInput').value.trim();
+    if(!url){ showError('Cole o link do vídeo primeiro.'); return; }
+    const btn = document.getElementById('btnTranscrever');
+    btn.disabled=true; btn.classList.add('opacity-60','cursor-not-allowed');
+    document.getElementById('result').classList.add('hidden');
+    document.getElementById('errorBox').classList.add('hidden');
+    document.getElementById('processing').classList.remove('hidden');
+    document.getElementById('processing').scrollIntoView({behavior:'smooth',block:'center'});
+
+    const t0 = Date.now();
+    const elEl = document.getElementById('elapsed');
+    elapsedTimer = setInterval(()=>{ elEl.textContent = Math.round((Date.now()-t0)/1000)+'s'; }, 500);
+
+    const STATUS = { fila:'Na fila…', baixando:'Baixando áudio do vídeo…', transcrevendo:'Transcrevendo a fala…' };
+    const finish = ()=>{ clearInterval(elapsedTimer); document.getElementById('processing').classList.add('hidden'); btn.disabled=false; btn.classList.remove('opacity-60','cursor-not-allowed'); };
+
+    try {
+      const resp = await fetch('/api/transcrever', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ url, modelo: document.getElementById('modelSel').value, idioma: document.getElementById('langSel').value, fonte: activeFonte() })
+      });
+      const data = await resp.json();
+      if(!resp.ok){ showError(data.erro || ('Erro '+resp.status)); finish(); return; }
+      pollJob(data.job_id, STATUS, finish);
+    } catch(e){ showError('Falha de conexão com o servidor: '+e.message); finish(); }
+  }
+
+  function pollJob(jid, STATUS, finish){
+    const tick = async ()=>{
+      try {
+        const job = await (await fetch('/api/job/'+jid)).json();
+        const pt = document.getElementById('procTitle');
+        if(pt && STATUS[job.status]) pt.textContent = STATUS[job.status];
+        if(job.status === 'ok'){ finish(); showResult(job.resultado); loadHistory(); return; }
+        if(job.status === 'erro'){ finish(); showError(job.erro || 'Erro no processamento.'); return; }
+        setTimeout(tick, 1500);
+      } catch(e){ finish(); showError('Falha ao consultar o job: '+e.message); }
+    };
+    tick();
+  }
+
+  function showError(msg){
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorBox').classList.remove('hidden');
+    document.getElementById('errorBox').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+
+  function chip(icon, html){ return `<span class="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-md bg-gelo text-ink-700"><i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${html}</span>`; }
+
+  function showResult(d){
+    currentText = d.texto || '';
+    currentTitle = d.titulo || '';
+    document.getElementById('resultTitle').textContent = d.titulo || '';
+    document.getElementById('resultMeta').innerHTML =
+      chip('languages', `${langName(d.idioma)} <span class="text-ink-400">·</span> <span class="mono">conf. ${d.confianca}%</span>`) +
+      chip('clock', `Áudio <span class="mono">${fmtDur(d.duracao_audio)}</span>`) +
+      chip('type', `<span class="mono">${d.palavras}</span> palavras`) +
+      chip('timer', `Processado em <span class="mono">${d.tempo_processo}s</span>`) +
+      chip('cpu', `modelo <span class="mono">${d.modelo}</span>`);
+    document.getElementById('transcriptBox').textContent = currentText || '(sem fala detectada)';
+    document.getElementById('result').classList.remove('hidden');
+    lucide.createIcons();
+    document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function copyText(){ navigator.clipboard?.writeText(currentText).then(()=>toast('Copiado para a área de transferência')).catch(()=>{}); }
+  function downloadTxt(){
+    const blob = new Blob([currentText], {type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (currentTitle ? currentTitle.replace(/[^\w\-]+/g,'_').slice(0,40) : 'transcricao') + '.txt';
+    a.click();
+  }
+
+  const FONTE_ICON = { TikTok:'music-2', YouTube:'youtube', Instagram:'instagram', Outro:'globe' };
+
+  async function loadHistory(){
+    let hist = [];
+    try { hist = await (await fetch('/api/history')).json(); } catch(e){}
+    const body = document.getElementById('historyBody');
+    if(!hist.length){
+      body.innerHTML = `<div class="flex flex-col items-center justify-center py-12 text-center">
+        <i data-lucide="captions" class="w-12 h-12 text-ink-300"></i>
+        <div class="mt-3 text-[15px] font-semibold text-ink-700">Nenhuma transcrição ainda</div>
+        <div class="text-[13px] text-ink-500 mt-1">Cole um link acima e clique em Transcrever para começar.</div>
+      </div>`;
+      lucide.createIcons(); return;
+    }
+    let rows = hist.map((h,i)=>`
+      <tr class="hover:bg-ink-100 cursor-pointer transition" onclick='openHist(${i})'>
+        <td class="px-6 py-3"><span class="inline-flex items-center gap-1.5"><i data-lucide="${FONTE_ICON[h.fonte]||'globe'}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span></td>
+        <td class="px-4 py-3 text-ink-700 truncate max-w-[360px]">${(h.titulo||h.texto||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
+        <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span></td>
+        <td class="px-4 py-3 text-ink-500 mono">${h.data||''}</td>
+      </tr>`).join('');
+    body.innerHTML = `<table class="w-full text-[13px]"><thead><tr class="text-left text-ink-600 bg-ink-50 text-[12px] uppercase tracking-wide">
+      <th class="px-6 py-2.5 font-semibold">Fonte</th><th class="px-4 py-2.5 font-semibold">Título / Trecho</th><th class="px-4 py-2.5 font-semibold">Idioma</th><th class="px-4 py-2.5 font-semibold">Data</th>
+      </tr></thead><tbody class="divide-y divide-border">${rows}</tbody></table>`;
+    window._hist = hist;
+    lucide.createIcons();
+  }
+
+  function openHist(i){ const h=window._hist[i]; if(h) showResult(h); }
+
+  async function clearHistory(){
+    if(!confirm('Apagar todo o histórico?')) return;
+    await fetch('/api/history', {method:'DELETE'});
+    loadHistory();
+    toast('Histórico limpo');
+  }
+
+  loadHistory();
+</script>
+</body>
+</html>
