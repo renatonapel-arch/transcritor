@@ -29,7 +29,6 @@
   .mono { font-family:'JetBrains Mono',monospace; }
   ::-webkit-scrollbar { width:10px; height:10px; }
   ::-webkit-scrollbar-thumb { background:#CFDEE7; border-radius:999px; border:2px solid #FAFCFD; }
-  .nav-sub.active { background:rgba(255,255,255,0.12); border-left:3px solid #fff; }
   .spin { animation:spin .8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
@@ -41,41 +40,8 @@
 
 <div class="flex min-h-screen">
 
-  <!-- SIDEBAR -->
-  <aside class="w-[220px] bg-naval text-white flex flex-col fixed h-screen">
-    <div class="px-5 py-5 flex items-center gap-3 border-b border-white/10">
-      <div class="w-9 h-9 rounded-lg bg-white text-naval flex items-center justify-center font-extrabold text-lg">N</div>
-      <div class="leading-tight">
-        <div class="font-bold text-[15px]">Clavis</div>
-        <div class="text-[10px] uppercase tracking-[0.12em] text-ceu">Renato</div>
-      </div>
-    </div>
-    <nav class="flex-1 overflow-y-auto py-3 text-[13.5px]">
-      <div class="px-5 pt-2 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Fé</div>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="book-open" class="w-[18px] h-[18px]"></i>Devocional Diário</a>
-      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Família</div>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="shopping-basket" class="w-[18px] h-[18px]"></i>Despensa</a>
-      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Saúde</div>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="syringe" class="w-[18px] h-[18px]"></i>Peso</a>
-      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Finanças</div>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="receipt" class="w-[18px] h-[18px]"></i>Boletos Pessoais</a>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="brain" class="w-[18px] h-[18px]"></i>Conselheiro IA</a>
-      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Vida</div>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="map" class="w-[18px] h-[18px]"></i>Atlas de Viagens</a>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="network" class="w-[18px] h-[18px]"></i>Árvore Genealógica</a>
-      <a class="nav-sub active flex items-center gap-3 px-5 py-2 text-white font-medium"><i data-lucide="captions" class="w-[18px] h-[18px]"></i>Transcritor</a>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="calendar-clock" class="w-[18px] h-[18px]"></i>Próximos Compromissos</a>
-      <div class="px-5 pt-3 pb-1 text-[10px] uppercase tracking-[0.1em] text-ceu/70">Norte</div>
-      <a class="flex items-center gap-3 px-5 py-2 text-white/70 hover:bg-white/5"><i data-lucide="compass" class="w-[18px] h-[18px]"></i>PEP</a>
-    </nav>
-    <div class="px-4 py-3 border-t border-white/10 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center font-semibold">R</div>
-      <div class="min-w-0"><div class="text-[13px] font-medium truncate">Renato</div><div class="text-[11px] text-ceu truncate">renato@napel.com.br</div></div>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="flex-1 ml-[220px]">
+  <!-- MAIN (sidebar removida: já existe a do Clavis ao redor do iframe) -->
+  <main class="flex-1">
     <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-border px-7 py-4 flex items-center justify-between">
       <div>
         <div class="flex items-center gap-1.5 text-[12px] text-ink-500 mb-1"><span>Vida</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i><span class="text-ink-700">Transcritor</span></div>
