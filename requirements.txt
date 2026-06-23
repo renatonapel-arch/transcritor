@@ -1,4 +1,4 @@
 fastapi
 uvicorn[standard]
-yt-dlp
+yt-dlp>=2026.6.9
 faster-whisper
