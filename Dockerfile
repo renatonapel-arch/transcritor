@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
-# faster-whisper usa PyAV (ffmpeg embutido na wheel) e yt-dlp baixa um stream de
-# áudio único -> não precisa de ffmpeg do sistema. Imagem slim basta.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     DATA_DIR=/data \

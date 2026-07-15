@@ -55,8 +55,14 @@ def get_model(nome: str):
 def baixar_audio(url: str, pasta_tmp: str):
     from yt_dlp import YoutubeDL
     saida = os.path.join(pasta_tmp, "audio.%(ext)s")
-    opcoes = {"format": "bestaudio/best", "outtmpl": saida, "quiet": True,
-              "no_warnings": True, "noplaylist": True}
+    opcoes = {
+        "format": "bestaudio/best",
+        "outtmpl": saida,
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "wav"}],
+    }
     with YoutubeDL(opcoes) as ydl:
         info = ydl.extract_info(url, download=True)
     arquivos = glob.glob(os.path.join(pasta_tmp, "audio.*"))
