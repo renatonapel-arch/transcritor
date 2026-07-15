@@ -67,10 +67,12 @@ def _tiktok_fallback(url: str, pasta_tmp: str):
     if result.get("code") != 0 or not result.get("data"):
         raise RuntimeError(result.get("msg", "tikwm API error"))
     d = result["data"]
-    audio_url = d.get("music") or d.get("play")
+    # "play" = vídeo original com o áudio de fato falado; "music" é só a trilha
+    # sonora de fundo (às vezes um som viral reaproveitado, sem relação com a fala)
+    audio_url = d.get("play") or d.get("music")
     if not audio_url:
         raise RuntimeError("Nenhum áudio retornado pela API alternativa")
-    ext = "mp3" if "music" in (audio_url or "") else "mp4"
+    ext = "mp4" if audio_url == d.get("play") else "mp3"
     out_path = os.path.join(pasta_tmp, f"audio.{ext}")
     req2 = urllib.request.Request(audio_url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req2, timeout=60) as r, open(out_path, "wb") as f:
