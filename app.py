@@ -61,7 +61,6 @@ def baixar_audio(url: str, pasta_tmp: str):
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "wav"}],
     }
     with YoutubeDL(opcoes) as ydl:
         info = ydl.extract_info(url, download=True)
