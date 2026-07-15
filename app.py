@@ -56,6 +56,18 @@ def _is_tiktok(url: str) -> bool:
     return any(h in url for h in ("tiktok.com", "tiktok."))
 
 
+def _tem_audio(caminho: str) -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
+             "stream=index", "-of", "csv=p=0", caminho],
+            capture_output=True, text=True, timeout=15)
+        return bool(r.stdout.strip())
+    except Exception:
+        return True  # ffprobe indisponível: não bloqueia o fluxo normal
+
+
 def _tiktok_fallback(url: str, pasta_tmp: str):
     import urllib.request, urllib.parse
     api = "https://www.tikwm.com/api/"
@@ -100,8 +112,11 @@ def baixar_audio(url: str, pasta_tmp: str):
         arquivos = glob.glob(os.path.join(pasta_tmp, "audio.*"))
         if not arquivos:
             raise FileNotFoundError("Áudio não baixado")
+        # TikTok às vezes reporta acodec=aac mas entrega um arquivo só de vídeo
+        if not _tem_audio(arquivos[0]):
+            raise RuntimeError("Arquivo baixado não tem faixa de áudio")
         return arquivos[0], info
-    except Exception as e:
+    except Exception:
         if _is_tiktok(url):
             return _tiktok_fallback(url, pasta_tmp)
         raise
