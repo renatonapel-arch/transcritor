@@ -84,7 +84,7 @@ def baixar_audio(url: str, pasta_tmp: str):
     saida = os.path.join(pasta_tmp, "audio.%(ext)s")
     cookies_path = os.path.join(DATA_DIR, "cookies.txt")
     opcoes = {
-        "format": "bestaudio/best",
+        "format": "bestaudio/best[acodec!=none]/best",
         "outtmpl": saida,
         "quiet": True,
         "no_warnings": True,
