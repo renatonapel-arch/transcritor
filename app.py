@@ -19,7 +19,7 @@ import threading
 import uuid
 from datetime import datetime
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
@@ -55,6 +55,7 @@ def get_model(nome: str):
 def baixar_audio(url: str, pasta_tmp: str):
     from yt_dlp import YoutubeDL
     saida = os.path.join(pasta_tmp, "audio.%(ext)s")
+    cookies_path = os.path.join(DATA_DIR, "cookies.txt")
     opcoes = {
         "format": "bestaudio/best",
         "outtmpl": saida,
@@ -62,6 +63,8 @@ def baixar_audio(url: str, pasta_tmp: str):
         "no_warnings": True,
         "noplaylist": True,
     }
+    if os.path.exists(cookies_path):
+        opcoes["cookiefile"] = cookies_path
     with YoutubeDL(opcoes) as ydl:
         info = ydl.extract_info(url, download=True)
     arquivos = glob.glob(os.path.join(pasta_tmp, "audio.*"))
@@ -141,7 +144,17 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"ok": True}
+    cookies_path = os.path.join(DATA_DIR, "cookies.txt")
+    return {"ok": True, "cookies": os.path.exists(cookies_path)}
+
+
+@app.post("/api/cookies")
+async def upload_cookies(request: Request):
+    body = await request.body()
+    cookies_path = os.path.join(DATA_DIR, "cookies.txt")
+    with open(cookies_path, "wb") as f:
+        f.write(body)
+    return {"ok": True, "size": len(body)}
 
 
 @app.get("/api/history")
