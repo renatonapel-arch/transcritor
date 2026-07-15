@@ -52,6 +52,33 @@ def get_model(nome: str):
         return _models[nome]
 
 
+def _is_tiktok(url: str) -> bool:
+    return any(h in url for h in ("tiktok.com", "tiktok."))
+
+
+def _tiktok_fallback(url: str, pasta_tmp: str):
+    import urllib.request, urllib.parse
+    api = "https://www.tikwm.com/api/"
+    data = urllib.parse.urlencode({"url": url, "hd": 1}).encode()
+    req = urllib.request.Request(api, data=data, headers={
+        "User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        result = json.loads(resp.read())
+    if result.get("code") != 0 or not result.get("data"):
+        raise RuntimeError(result.get("msg", "tikwm API error"))
+    d = result["data"]
+    audio_url = d.get("music") or d.get("play")
+    if not audio_url:
+        raise RuntimeError("Nenhum áudio retornado pela API alternativa")
+    ext = "mp3" if "music" in (audio_url or "") else "mp4"
+    out_path = os.path.join(pasta_tmp, f"audio.{ext}")
+    req2 = urllib.request.Request(audio_url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req2, timeout=60) as r, open(out_path, "wb") as f:
+        f.write(r.read())
+    info = {"title": d.get("title", ""), "duration": d.get("duration", 0)}
+    return out_path, info
+
+
 def baixar_audio(url: str, pasta_tmp: str):
     from yt_dlp import YoutubeDL
     saida = os.path.join(pasta_tmp, "audio.%(ext)s")
@@ -65,12 +92,17 @@ def baixar_audio(url: str, pasta_tmp: str):
     }
     if os.path.exists(cookies_path):
         opcoes["cookiefile"] = cookies_path
-    with YoutubeDL(opcoes) as ydl:
-        info = ydl.extract_info(url, download=True)
-    arquivos = glob.glob(os.path.join(pasta_tmp, "audio.*"))
-    if not arquivos:
-        raise FileNotFoundError("Áudio não baixado — o link pode exigir login.")
-    return arquivos[0], info
+    try:
+        with YoutubeDL(opcoes) as ydl:
+            info = ydl.extract_info(url, download=True)
+        arquivos = glob.glob(os.path.join(pasta_tmp, "audio.*"))
+        if not arquivos:
+            raise FileNotFoundError("Áudio não baixado")
+        return arquivos[0], info
+    except Exception as e:
+        if _is_tiktok(url):
+            return _tiktok_fallback(url, pasta_tmp)
+        raise
 
 
 def ler_historico():
