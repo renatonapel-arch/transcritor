@@ -101,15 +101,17 @@ def _processar(jid, url, modelo, idioma, fonte):
                 set_job(jid, status="transcrevendo", titulo=info_dl.get("title") or "")
                 model = get_model(modelo)
                 lang = None if idioma in ("auto", "", None) else idioma
-                segmentos, info = model.transcribe(caminho, language=lang, vad_filter=False)
+                segmentos, info = model.transcribe(caminho, language=lang, vad_filter=True)
                 texto = " ".join(s.text.strip() for s in segmentos).strip()
             except Exception as e:
                 set_job(jid, status="erro", erro=f"Falha na transcrição: {e}")
                 return
         dur = float(getattr(info, "duration", 0) or info_dl.get("duration") or 0)
+        detected_lang = getattr(info, "language", lang or "?")
+        detected_prob = getattr(info, "language_probability", 0) or 0
         item = {
             "url": url, "fonte": fonte, "modelo": modelo,
-            "idioma": info.language, "confianca": round(float(info.language_probability) * 100),
+            "idioma": detected_lang, "confianca": round(float(detected_prob) * 100),
             "duracao_audio": round(dur), "palavras": len(texto.split()),
             "tempo_processo": round(time.time() - t0, 1),
             "titulo": info_dl.get("title") or "", "texto": texto,
