@@ -28,6 +28,7 @@ INDEX_HTML = os.path.join(BASE_DIR, "index.html")
 DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
 os.makedirs(DATA_DIR, exist_ok=True)
 HISTORY_FILE = os.path.join(DATA_DIR, "history.json")
+CODIGO_FILE = os.path.join(DATA_DIR, "contador_codigo.json")
 
 # modelos do whisper no volume persistente (não rebaixar a cada deploy)
 os.environ.setdefault("HF_HOME", os.path.join(DATA_DIR, "hf"))
@@ -139,6 +140,53 @@ def salvar_no_historico(item: dict):
         json.dump(hist[:500], f, ensure_ascii=False, indent=2)
 
 
+def _ler_contador_codigo():
+    if os.path.exists(CODIGO_FILE):
+        try:
+            with open(CODIGO_FILE, "r", encoding="utf-8") as f:
+                return json.load(f).get("proximo", 1)
+        except Exception:
+            pass
+    return 1
+
+
+def _salvar_contador_codigo(n: int):
+    with open(CODIGO_FILE, "w", encoding="utf-8") as f:
+        json.dump({"proximo": n}, f)
+
+
+def proximo_codigo() -> str:
+    n = _ler_contador_codigo()
+    _salvar_contador_codigo(n + 1)
+    return f"#{n:04d}"
+
+
+def migrar_codigos_existentes():
+    """Dá #NNNN pra item do histórico que ainda não tem. Roda 1x no start,
+    idempotente — item que já tem codigo nunca é tocado de novo. Não depende
+    do campo 'data' (string 'dd/mm HH:MM' sem ano, não ordena bem sozinha);
+    usa a ordem da própria lista, que salvar_no_historico já mantém do mais
+    novo pro mais antigo (insert(0, ...)) — então o mais antigo sem código
+    recebe o próximo número disponível."""
+    hist = ler_historico()
+    if not hist or all(h.get("codigo") for h in hist):
+        return
+    n = _ler_contador_codigo()
+    mudou = False
+    for h in reversed(hist):
+        if not h.get("codigo"):
+            h["codigo"] = f"#{n:04d}"
+            n += 1
+            mudou = True
+    if mudou:
+        _salvar_contador_codigo(n)
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False, indent=2)
+
+
+migrar_codigos_existentes()
+
+
 def set_job(jid, **kw):
     with _jobs_lock:
         _jobs.setdefault(jid, {}).update(kw)
@@ -167,6 +215,7 @@ def _processar(jid, url, modelo, idioma, fonte):
         detected_lang = getattr(info, "language", lang or "?")
         detected_prob = getattr(info, "language_probability", 0) or 0
         item = {
+            "codigo": proximo_codigo(),
             "url": url, "fonte": fonte, "modelo": modelo,
             "idioma": detected_lang, "confianca": round(float(detected_prob) * 100),
             "duracao_audio": round(dur), "palavras": len(texto.split()),

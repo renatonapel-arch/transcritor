@@ -221,6 +221,7 @@
     currentTitle = d.titulo || '';
     document.getElementById('resultTitle').textContent = d.titulo || '';
     document.getElementById('resultMeta').innerHTML =
+      (d.codigo ? chip('hash', `<span class="mono font-semibold">${d.codigo}</span>`) : '') +
       chip('languages', `${langName(d.idioma)} <span class="text-ink-400">·</span> <span class="mono">conf. ${d.confianca}%</span>`) +
       chip('clock', `Áudio <span class="mono">${fmtDur(d.duracao_audio)}</span>`) +
       chip('type', `<span class="mono">${d.palavras}</span> palavras`) +
@@ -262,7 +263,7 @@
       let cards = hist.map((h,i)=>`
         <div class="px-4 py-3 border-b border-border hover:bg-ink-100 cursor-pointer transition" onclick='openHist(${i})'>
           <div class="flex items-center justify-between mb-1">
-            <span class="inline-flex items-center gap-1.5 text-[13px] font-medium"><i data-lucide="${FONTE_ICON[h.fonte]||'globe'}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span>
+            <span class="inline-flex items-center gap-1.5 text-[13px] font-medium"><span class="mono text-[11px] px-1.5 py-0.5 rounded bg-ceu/10 text-ceu font-semibold">${h.codigo||'—'}</span><i data-lucide="${FONTE_ICON[h.fonte]||'globe'}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span>
             <div class="flex items-center gap-2">
               <span class="text-[11px] px-1.5 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span>
               <span class="text-[11px] text-ink-500 mono">${h.data||''}</span>
@@ -274,13 +275,14 @@
     } else {
       let rows = hist.map((h,i)=>`
         <tr class="hover:bg-ink-100 cursor-pointer transition" onclick='openHist(${i})'>
+          <td class="px-4 py-3 mono text-[12px] font-semibold text-ceu">${h.codigo||'—'}</td>
           <td class="px-6 py-3"><span class="inline-flex items-center gap-1.5"><i data-lucide="${FONTE_ICON[h.fonte]||'globe'}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span></td>
           <td class="px-4 py-3 text-ink-700 truncate max-w-[360px]">${(h.titulo||h.texto||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
           <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span></td>
           <td class="px-4 py-3 text-ink-500 mono">${h.data||''}</td>
         </tr>`).join('');
       body.innerHTML = `<table class="w-full text-[13px]"><thead><tr class="text-left text-ink-600 bg-ink-50 text-[12px] uppercase tracking-wide">
-        <th class="px-6 py-2.5 font-semibold">Fonte</th><th class="px-4 py-2.5 font-semibold">Título / Trecho</th><th class="px-4 py-2.5 font-semibold">Idioma</th><th class="px-4 py-2.5 font-semibold">Data</th>
+        <th class="px-4 py-2.5 font-semibold">Código</th><th class="px-6 py-2.5 font-semibold">Fonte</th><th class="px-4 py-2.5 font-semibold">Título / Trecho</th><th class="px-4 py-2.5 font-semibold">Idioma</th><th class="px-4 py-2.5 font-semibold">Data</th>
         </tr></thead><tbody class="divide-y divide-border">${rows}</tbody></table>`;
     }
     window._hist = hist;
