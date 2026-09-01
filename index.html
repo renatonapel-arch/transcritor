@@ -222,6 +222,7 @@
     document.getElementById('resultTitle').textContent = d.titulo || '';
     document.getElementById('resultMeta').innerHTML =
       (d.codigo ? chip('hash', `<span class="mono font-semibold">${d.codigo}</span>`) : '') +
+      (d.url ? `<a href="${d.url}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-gelo text-ink-700 hover:bg-ceu/10 hover:text-ceu transition"><i data-lucide="external-link" class="w-3.5 h-3.5"></i>Abrir link original</a>` : '') +
       chip('languages', `${langName(d.idioma)} <span class="text-ink-400">·</span> <span class="mono">conf. ${d.confianca}%</span>`) +
       chip('clock', `Áudio <span class="mono">${fmtDur(d.duracao_audio)}</span>`) +
       chip('type', `<span class="mono">${d.palavras}</span> palavras`) +
