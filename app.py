@@ -12,6 +12,7 @@ proxy. Histórico e modelos ficam em DATA_DIR (volume persistente na VPS).
 
 import json
 import os
+import re
 import tempfile
 import time
 import glob
@@ -80,6 +81,17 @@ def _tiktok_fallback(url: str, pasta_tmp: str):
     if result.get("code") != 0 or not result.get("data"):
         raise RuntimeError(result.get("msg", "tikwm API error"))
     d = result["data"]
+
+    if d.get("images"):
+        # carrossel de fotos: não existe fala pra transcrever. O "play"/"music"
+        # aqui é só a trilha sonora do post — baixar e mandar pro Whisper
+        # transcrevia LETRA DE MÚSICA como se fosse o vídeo falando (bug real,
+        # já gerou veredito errado no item #0088 antes desta correção).
+        info = {"title": d.get("title", ""), "duration": 0,
+                "tipo_post": "carrossel", "imagens_n": len(d["images"]),
+                "_tikwm": d}
+        return None, info
+
     # "play" = vídeo original com o áudio de fato falado; "music" é só a trilha
     # sonora de fundo (às vezes um som viral reaproveitado, sem relação com a fala)
     audio_url = d.get("play") or d.get("music")
@@ -90,7 +102,7 @@ def _tiktok_fallback(url: str, pasta_tmp: str):
     req2 = urllib.request.Request(audio_url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req2, timeout=60) as r, open(out_path, "wb") as f:
         f.write(r.read())
-    info = {"title": d.get("title", ""), "duration": d.get("duration", 0)}
+    info = {"title": d.get("title", ""), "duration": d.get("duration", 0), "_tikwm": d}
     return out_path, info
 
 
@@ -192,6 +204,38 @@ def set_job(jid, **kw):
         _jobs.setdefault(jid, {}).update(kw)
 
 
+def extrair_metadados(info_dl: dict) -> dict:
+    """Metadados do post, venha do yt-dlp (campos nativos de info_dl) ou do
+    fallback tikwm (dict bruto guardado em info_dl['_tikwm']). Cada campo
+    tenta as duas fontes, na ordem que a sondagem confirmou existir.
+    NUNCA grava URL de mídia (play/music/cover/avatar) — são links
+    assinados que expiram em 24-48h e viram link morto no histórico."""
+    tk = info_dl.get("_tikwm") or {}
+    music = tk.get("music_info") or {}
+    author = tk.get("author") or {}
+
+    titulo = info_dl.get("title") or ""
+    if not titulo and tk.get("content_desc"):
+        titulo = "\n".join(tk["content_desc"])
+    if not titulo:
+        titulo = info_dl.get("description") or ""
+
+    return {
+        "titulo": titulo,
+        "autor": info_dl.get("uploader") or author.get("unique_id") or "",
+        "data_publicacao": info_dl.get("timestamp") or tk.get("create_time"),
+        "views": info_dl.get("view_count", tk.get("play_count")),
+        "likes": info_dl.get("like_count", tk.get("digg_count")),
+        "salvos": info_dl.get("save_count", tk.get("collect_count") or tk.get("download_count")),
+        "som_titulo": info_dl.get("track") or music.get("title") or "",
+        "som_autor": info_dl.get("artist") or music.get("author") or "",
+        # is_ad só existe quando a fonte foi o fallback tikwm; yt-dlp não expõe
+        # esse campo pro extrator de TikTok — fica None nesse caso, não False
+        "is_ad": tk.get("is_ad"),
+        "hashtags": re.findall(r"#(\w+)", titulo),
+    }
+
+
 def _processar(jid, url, modelo, idioma, fonte):
     with _work_sema:
         t0 = time.time()
@@ -202,25 +246,35 @@ def _processar(jid, url, modelo, idioma, fonte):
             except Exception as e:
                 set_job(jid, status="erro", erro=f"Falha no download: {e}")
                 return
+
+            meta = extrair_metadados(info_dl)
+            carrossel = info_dl.get("tipo_post") == "carrossel"
             try:
-                set_job(jid, status="transcrevendo", titulo=info_dl.get("title") or "")
-                model = get_model(modelo)
-                lang = None if idioma in ("auto", "", None) else idioma
-                segmentos, info = model.transcribe(caminho, language=lang, vad_filter=True)
-                texto = " ".join(s.text.strip() for s in segmentos).strip()
+                set_job(jid, status="transcrevendo", titulo=meta["titulo"])
+                if carrossel:
+                    # sem áudio de fala pra transcrever — ver _tiktok_fallback
+                    texto, dur, detected_lang, detected_prob = "", 0, "", 0
+                else:
+                    model = get_model(modelo)
+                    lang = None if idioma in ("auto", "", None) else idioma
+                    segmentos, info = model.transcribe(caminho, language=lang, vad_filter=True)
+                    texto = " ".join(s.text.strip() for s in segmentos).strip()
+                    dur = float(getattr(info, "duration", 0) or info_dl.get("duration") or 0)
+                    detected_lang = getattr(info, "language", lang or "?")
+                    detected_prob = getattr(info, "language_probability", 0) or 0
             except Exception as e:
                 set_job(jid, status="erro", erro=f"Falha na transcrição: {e}")
                 return
-        dur = float(getattr(info, "duration", 0) or info_dl.get("duration") or 0)
-        detected_lang = getattr(info, "language", lang or "?")
-        detected_prob = getattr(info, "language_probability", 0) or 0
         item = {
             "codigo": proximo_codigo(),
             "url": url, "fonte": fonte, "modelo": modelo,
             "idioma": detected_lang, "confianca": round(float(detected_prob) * 100),
             "duracao_audio": round(dur), "palavras": len(texto.split()),
             "tempo_processo": round(time.time() - t0, 1),
-            "titulo": info_dl.get("title") or "", "texto": texto,
+            "texto": texto,
+            "tipo_post": "carrossel" if carrossel else "video",
+            "imagens_n": info_dl.get("imagens_n") if carrossel else None,
+            **meta,
             "data": datetime.now().strftime("%d/%m %H:%M"),
         }
         salvar_no_historico(item)
