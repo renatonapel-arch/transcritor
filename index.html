@@ -131,6 +131,7 @@
         </div>
         <div id="resultTitle" class="px-4 sm:px-6 pt-4 text-[14px] font-medium text-ink-700"></div>
         <div id="resultMeta" class="flex flex-wrap gap-2 px-4 sm:px-6 pt-3"></div>
+        <div id="resultExtra" class="px-4 sm:px-6 pt-2 text-[12px] text-ink-500 space-y-0.5"></div>
         <div id="transcriptBox" class="px-4 sm:px-6 py-4 sm:py-5 text-[14px] leading-[1.7] text-ink-800 whitespace-pre-wrap break-words"></div>
       </section>
 
@@ -216,6 +217,12 @@
 
   function chip(icon, html){ return `<span class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-gelo text-ink-700"><i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${html}</span>`; }
 
+  // Texto vindo do post do TikTok (autor, som, hashtags) é conteúdo de terceiro —
+  // nunca jogar direto em innerHTML sem escapar (o vídeo/legenda já passam por
+  // .replace(/</g,'&lt;') no histórico; isto cobre os campos novos de metadados).
+  function esc(s){ return String(s==null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtNum(n){ return (n==null) ? null : Number(n).toLocaleString('pt-BR'); }
+
   function showResult(d){
     currentText = d.texto || '';
     currentTitle = d.titulo || '';
@@ -223,12 +230,22 @@
     document.getElementById('resultMeta').innerHTML =
       (d.codigo ? chip('hash', `<span class="mono font-semibold">${d.codigo}</span>`) : '') +
       (d.url ? `<a href="${d.url}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-gelo text-ink-700 hover:bg-ceu/10 hover:text-ceu transition"><i data-lucide="external-link" class="w-3.5 h-3.5"></i>Abrir link original</a>` : '') +
+      (d.autor ? `<a href="https://www.tiktok.com/@${encodeURIComponent(d.autor)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-gelo text-ink-700 hover:bg-ceu/10 hover:text-ceu transition"><i data-lucide="user" class="w-3.5 h-3.5"></i>@${esc(d.autor)}</a>` : '') +
+      (d.tipo_post === 'carrossel' ? chip('images', `Carrossel <span class="mono">${d.imagens_n ?? '?'}</span> fotos`) : '') +
+      (d.is_ad === true ? `<span class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-warn-bg text-warn-fg font-medium"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i>Publi (marcado pelo TikTok)</span>` : '') +
       chip('languages', `${langName(d.idioma)} <span class="text-ink-400">·</span> <span class="mono">conf. ${d.confianca}%</span>`) +
       chip('clock', `Áudio <span class="mono">${fmtDur(d.duracao_audio)}</span>`) +
       chip('type', `<span class="mono">${d.palavras}</span> palavras`) +
       chip('timer', `Processado em <span class="mono">${d.tempo_processo}s</span>`) +
       chip('cpu', `modelo <span class="mono">${d.modelo}</span>`);
-    document.getElementById('transcriptBox').textContent = currentText || '(sem fala detectada)';
+
+    const metricas = ['views','likes','salvos'].map(k=>fmtNum(d[k])).filter(v=>v!=null);
+    const linhaMetricas = metricas.length ? `👁 ${fmtNum(d.views)??'—'} views · ❤ ${fmtNum(d.likes)??'—'} likes · 🔖 ${fmtNum(d.salvos)??'—'} salvos` : '';
+    const linhaSom = (d.som_titulo || d.som_autor) ? `🎵 ${esc(d.som_titulo||'som sem nome')}${d.som_autor ? ' — ' + esc(d.som_autor) : ''}` : '';
+    const linhaTags = (d.hashtags && d.hashtags.length) ? d.hashtags.map(h=>'#'+esc(h)).join(' ') : '';
+    document.getElementById('resultExtra').innerHTML = [linhaMetricas, linhaSom, linhaTags].filter(Boolean).map(l=>`<div>${l}</div>`).join('');
+
+    document.getElementById('transcriptBox').textContent = currentText || (d.tipo_post === 'carrossel' ? '(post de fotos — sem áudio pra transcrever)' : '(sem fala detectada)');
     document.getElementById('result').classList.remove('hidden');
     lucide.createIcons();
     document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
@@ -264,26 +281,28 @@
       let cards = hist.map((h,i)=>`
         <div class="px-4 py-3 border-b border-border hover:bg-ink-100 cursor-pointer transition" onclick='openHist(${i})'>
           <div class="flex items-center justify-between mb-1">
-            <span class="inline-flex items-center gap-1.5 text-[13px] font-medium"><span class="mono text-[11px] px-1.5 py-0.5 rounded bg-ceu/10 text-ceu font-semibold">${h.codigo||'—'}</span><i data-lucide="${FONTE_ICON[h.fonte]||'globe'}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span>
+            <span class="inline-flex items-center gap-1.5 text-[13px] font-medium"><span class="mono text-[11px] px-1.5 py-0.5 rounded bg-ceu/10 text-ceu font-semibold">${h.codigo||'—'}</span><i data-lucide="${h.tipo_post==='carrossel' ? 'images' : (FONTE_ICON[h.fonte]||'globe')}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}${h.is_ad===true ? ' <span class="text-[10px] px-1 rounded bg-warn-bg text-warn-fg">Publi</span>' : ''}</span>
             <div class="flex items-center gap-2">
               <span class="text-[11px] px-1.5 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span>
               <span class="text-[11px] text-ink-500 mono">${h.data||''}</span>
             </div>
           </div>
           <div class="text-[13px] text-ink-700 truncate">${(h.titulo||h.texto||'').replace(/</g,'&lt;').slice(0,80) || '—'}</div>
+          ${h.autor ? `<div class="text-[11px] text-ink-500 mt-0.5">@${esc(h.autor)}</div>` : ''}
         </div>`).join('');
       body.innerHTML = cards;
     } else {
       let rows = hist.map((h,i)=>`
         <tr class="hover:bg-ink-100 cursor-pointer transition" onclick='openHist(${i})'>
           <td class="px-4 py-3 mono text-[12px] font-semibold text-ceu">${h.codigo||'—'}</td>
-          <td class="px-6 py-3"><span class="inline-flex items-center gap-1.5"><i data-lucide="${FONTE_ICON[h.fonte]||'globe'}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span></td>
-          <td class="px-4 py-3 text-ink-700 truncate max-w-[360px]">${(h.titulo||h.texto||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
+          <td class="px-6 py-3"><span class="inline-flex items-center gap-1.5"><i data-lucide="${h.tipo_post==='carrossel' ? 'images' : (FONTE_ICON[h.fonte]||'globe')}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span></td>
+          <td class="px-4 py-3 text-ink-500 truncate max-w-[140px]">${h.autor ? '@'+esc(h.autor) : '—'}${h.is_ad===true ? ' <span class="text-[10px] px-1 rounded bg-warn-bg text-warn-fg">Publi</span>' : ''}</td>
+          <td class="px-4 py-3 text-ink-700 truncate max-w-[320px]">${(h.titulo||h.texto||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
           <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span></td>
           <td class="px-4 py-3 text-ink-500 mono">${h.data||''}</td>
         </tr>`).join('');
       body.innerHTML = `<table class="w-full text-[13px]"><thead><tr class="text-left text-ink-600 bg-ink-50 text-[12px] uppercase tracking-wide">
-        <th class="px-4 py-2.5 font-semibold">Código</th><th class="px-6 py-2.5 font-semibold">Fonte</th><th class="px-4 py-2.5 font-semibold">Título / Trecho</th><th class="px-4 py-2.5 font-semibold">Idioma</th><th class="px-4 py-2.5 font-semibold">Data</th>
+        <th class="px-4 py-2.5 font-semibold">Código</th><th class="px-6 py-2.5 font-semibold">Fonte</th><th class="px-4 py-2.5 font-semibold">Autor</th><th class="px-4 py-2.5 font-semibold">Título / Trecho</th><th class="px-4 py-2.5 font-semibold">Idioma</th><th class="px-4 py-2.5 font-semibold">Data</th>
         </tr></thead><tbody class="divide-y divide-border">${rows}</tbody></table>`;
     }
     window._hist = hist;
