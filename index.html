@@ -224,7 +224,7 @@
   function fmtNum(n){ return (n==null) ? null : Number(n).toLocaleString('pt-BR'); }
 
   function showResult(d){
-    currentText = d.texto || '';
+    currentText = d.texto || d.texto_imagens || '';
     currentTitle = d.titulo || '';
     document.getElementById('resultTitle').textContent = d.titulo || '';
     document.getElementById('resultMeta').innerHTML =
@@ -245,7 +245,7 @@
     const linhaTags = (d.hashtags && d.hashtags.length) ? d.hashtags.map(h=>'#'+esc(h)).join(' ') : '';
     document.getElementById('resultExtra').innerHTML = [linhaMetricas, linhaSom, linhaTags].filter(Boolean).map(l=>`<div>${l}</div>`).join('');
 
-    document.getElementById('transcriptBox').textContent = currentText || (d.tipo_post === 'carrossel' ? '(post de fotos — sem áudio pra transcrever)' : '(sem fala detectada)');
+    document.getElementById('transcriptBox').textContent = currentText || (d.tipo_post === 'carrossel' ? '(post de fotos, sem texto legível nas imagens)' : '(sem fala detectada)');
     document.getElementById('result').classList.remove('hidden');
     lucide.createIcons();
     document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
@@ -287,7 +287,7 @@
               <span class="text-[11px] text-ink-500 mono">${h.data||''}</span>
             </div>
           </div>
-          <div class="text-[13px] text-ink-700 truncate">${(h.titulo||h.texto||'').replace(/</g,'&lt;').slice(0,80) || '—'}</div>
+          <div class="text-[13px] text-ink-700 truncate">${(h.titulo||h.texto||h.texto_imagens||'').replace(/</g,'&lt;').slice(0,80) || '—'}</div>
           ${h.autor ? `<div class="text-[11px] text-ink-500 mt-0.5">@${esc(h.autor)}</div>` : ''}
         </div>`).join('');
       body.innerHTML = cards;
@@ -297,7 +297,7 @@
           <td class="px-4 py-3 mono text-[12px] font-semibold text-ceu">${h.codigo||'—'}</td>
           <td class="px-6 py-3"><span class="inline-flex items-center gap-1.5"><i data-lucide="${h.tipo_post==='carrossel' ? 'images' : (FONTE_ICON[h.fonte]||'globe')}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span></td>
           <td class="px-4 py-3 text-ink-500 truncate max-w-[140px]">${h.autor ? '@'+esc(h.autor) : '—'}${h.is_ad===true ? ' <span class="text-[10px] px-1 rounded bg-warn-bg text-warn-fg">Publi</span>' : ''}</td>
-          <td class="px-4 py-3 text-ink-700 truncate max-w-[320px]">${(h.titulo||h.texto||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
+          <td class="px-4 py-3 text-ink-700 truncate max-w-[320px]">${(h.titulo||h.texto||h.texto_imagens||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
           <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span></td>
           <td class="px-4 py-3 text-ink-500 mono">${h.data||''}</td>
         </tr>`).join('');
