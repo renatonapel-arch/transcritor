@@ -313,9 +313,13 @@
     L.push('');
     L.push('## 4. Dados técnicos');
     L.push('');
-    L.push(`- Tipo de post: ${d.tipo_post === 'carrossel' ? `carrossel (${d.imagens_n ?? '?'} fotos)` : 'vídeo'}`);
-    L.push(`- Idioma: ${(d.idioma || '').toUpperCase()} · Confiança: ${d.confianca}%`);
-    L.push(`- Duração do áudio: ${fmtDur(d.duracao_audio)} · ${d.palavras} palavras`);
+    if (d.tipo_post === 'carrossel') {
+      L.push(`- Tipo de post: carrossel (${d.imagens_n ?? '?'} fotos) — sem fala pra transcrever por natureza, os campos de áudio/idioma abaixo não se aplicam`);
+    } else {
+      L.push('- Tipo de post: vídeo');
+      L.push(`- Idioma: ${(d.idioma || '').toUpperCase()} · Confiança: ${d.confianca}%`);
+      L.push(`- Duração do áudio: ${fmtDur(d.duracao_audio)} · ${d.palavras} palavras`);
+    }
     L.push(`- Modelo: ${d.modelo} · Processado em ${d.tempo_processo}s`);
     L.push('');
     L.push('---');
