@@ -288,6 +288,49 @@ def ocr_carrossel(image_urls: list) -> str:
         return ""
 
 
+def buscar_comentarios(url: str, count: int = 20) -> dict:
+    """1 página de comentários via tikwm (item 3 do roadmap, 01/09/2026).
+    Falha SEMPRE em silêncio: sem comentário aqui NUNCA pode virar "post
+    sem reação" no julgamento — é só "a busca não trouxe nada dessa vez"
+    (o tikwm pode estar fora do ar, sem fonte reserva pra isso).
+    Coleta é sabidamente PARCIAL (medido: total 26 → só 19 devolvidos) —
+    daí o campo comentarios_incompleto, pra nunca tratar como lista fechada.
+    NUNCA grava identidade de quem comentou (sec_uid, unique_id, avatar,
+    região) — só o texto e os números. Quem comentou não pediu pra
+    aparecer na triagem de vídeo do Renato; LGPD."""
+    import urllib.parse
+    import urllib.request
+    try:
+        body = urllib.parse.urlencode({"url": url, "count": count, "cursor": 0}).encode()
+        req = urllib.request.Request(
+            "https://www.tikwm.com/api/comment/list", data=body,
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            r = json.loads(resp.read())
+        if r.get("code") != 0:
+            raise RuntimeError(r.get("msg", "tikwm comment API error"))
+        data = r.get("data") or {}
+        brutos = data.get("comments") or []
+        # ordem que a API devolveu, NUNCA reordenar por curtida — o
+        # comentário mais útil visto num teste real tinha 2 curtidas, e o
+        # mais curtido (107) era piada
+        comentarios = [{
+            "texto": (c.get("text") or "")[:200],
+            "likes": c.get("digg_count"),
+            "respostas": c.get("reply_total"),
+            "data": c.get("create_time"),
+        } for c in brutos]
+        total = data.get("total")
+        return {
+            "comentarios": comentarios,
+            "comentarios_total": total,
+            "comentarios_incompleto": bool(total and total > len(comentarios)),
+        }
+    except Exception as e:
+        print(f"[buscar_comentarios] falhou, seguindo sem comentário: {e}", flush=True)
+        return {"comentarios": [], "comentarios_total": None, "comentarios_incompleto": None}
+
+
 def _processar(jid, url, modelo, idioma, fonte):
     with _work_sema:
         t0 = time.time()
@@ -322,6 +365,11 @@ def _processar(jid, url, modelo, idioma, fonte):
             except Exception as e:
                 set_job(jid, status="erro", erro=f"Falha na transcrição: {e}")
                 return
+
+            set_job(jid, status="lendo_comentarios")
+            if info_dl.get("_tikwm"):
+                time.sleep(1.1)  # tikwm: 1 req/s — já chamamos ele acima pra baixar a mídia
+            comentarios_info = buscar_comentarios(url)
         item = {
             "codigo": proximo_codigo(),
             "url": url, "fonte": fonte, "modelo": modelo,
@@ -333,6 +381,7 @@ def _processar(jid, url, modelo, idioma, fonte):
             "tipo_post": "carrossel" if carrossel else "video",
             "imagens_n": info_dl.get("imagens_n") if carrossel else None,
             **meta,
+            **comentarios_info,
             "data": datetime.now().strftime("%d/%m %H:%M"),
         }
         salvar_no_historico(item)
