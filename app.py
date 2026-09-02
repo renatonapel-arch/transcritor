@@ -236,6 +236,58 @@ def extrair_metadados(info_dl: dict) -> dict:
     }
 
 
+def ocr_carrossel(image_urls: list) -> str:
+    """Manda as fotos do carrossel pro Gemini ler o texto de cada uma
+    (item 4 do roadmap de 01/09/2026 — ligado só pra carrossel, não pra
+    vídeo, que teve OCR partido entre modelos no teste). Falha SEMPRE em
+    silêncio: sem chave configurada, erro de rede ou de API → volta "" e o
+    julgamento cai pra legenda, que já funcionava antes desta função
+    existir. Custo medido em teste real: ~US$0,024 por carrossel de 12
+    fotos (gemini-3.7-flash, tabela de preço de 01/09/2026)."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key or not image_urls:
+        return ""
+    import base64
+    import urllib.request
+
+    parts = [{"text": (
+        "Isto e um carrossel de fotos de rede social, com "
+        f"{len(image_urls)} imagens, na ordem em que aparecem. Para CADA "
+        "imagem, leia todo texto visivel nela (titulo, numeros, legenda, "
+        "qualquer coisa escrita). Responda em texto simples, uma linha por "
+        "imagem, no formato 'Imagem N: <texto lido>' — ou 'Imagem N: (sem "
+        "texto legivel)' se não houver nada escrito. Não invente texto que "
+        "não esteja de fato visível na imagem."
+    )}]
+    for img_url in image_urls:
+        try:
+            req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                img = r.read()
+            parts.append({"inline_data": {"mime_type": "image/jpeg",
+                                          "data": base64.b64encode(img).decode()}})
+        except Exception:
+            continue  # 1 foto que falhou não derruba as outras 11
+    if len(parts) <= 1:
+        return ""
+
+    try:
+        body = json.dumps({"contents": [{"parts": parts}]}).encode()
+        req = urllib.request.Request(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent",
+            data=body, headers={"Content-Type": "application/json", "x-goog-api-key": api_key})
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            r = json.loads(resp.read())
+        u = r.get("usageMetadata", {})
+        print(f"[ocr_carrossel] {len(parts) - 1} fotos · tokens entrada="
+              f"{u.get('promptTokenCount')} saida={u.get('candidatesTokenCount')} "
+              f"pensamento={u.get('thoughtsTokenCount')}", flush=True)
+        return r["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        print(f"[ocr_carrossel] falhou, seguindo só com a legenda: {e}", flush=True)
+        return ""
+
+
 def _processar(jid, url, modelo, idioma, fonte):
     with _work_sema:
         t0 = time.time()
@@ -249,11 +301,16 @@ def _processar(jid, url, modelo, idioma, fonte):
 
             meta = extrair_metadados(info_dl)
             carrossel = info_dl.get("tipo_post") == "carrossel"
+            texto_imagens = ""
             try:
                 set_job(jid, status="transcrevendo", titulo=meta["titulo"])
                 if carrossel:
                     # sem áudio de fala pra transcrever — ver _tiktok_fallback
                     texto, dur, detected_lang, detected_prob = "", 0, "", 0
+                    imagens = (info_dl.get("_tikwm") or {}).get("images") or []
+                    if imagens:
+                        set_job(jid, status="lendo_fotos")
+                        texto_imagens = ocr_carrossel(imagens)
                 else:
                     model = get_model(modelo)
                     lang = None if idioma in ("auto", "", None) else idioma
@@ -272,6 +329,7 @@ def _processar(jid, url, modelo, idioma, fonte):
             "duracao_audio": round(dur), "palavras": len(texto.split()),
             "tempo_processo": round(time.time() - t0, 1),
             "texto": texto,
+            "texto_imagens": texto_imagens,
             "tipo_post": "carrossel" if carrossel else "video",
             "imagens_n": info_dl.get("imagens_n") if carrossel else None,
             **meta,
