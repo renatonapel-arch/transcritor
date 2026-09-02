@@ -126,7 +126,7 @@
           <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-[18px] h-[18px] text-success flex-shrink-0"></i><h2 class="text-[16px] sm:text-[18px] font-semibold tracking-[-0.01em]">Transcrição pronta</h2></div>
           <div class="flex items-center gap-2">
             <button onclick="copyText()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 h-[36px] sm:h-[34px] border border-border-strong rounded-md text-[13px] text-naval hover:bg-gelo transition"><i data-lucide="copy" class="w-4 h-4"></i>Copiar</button>
-            <button onclick="downloadTxt()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 h-[36px] sm:h-[34px] bg-naval text-white rounded-md text-[13px] hover:bg-noite transition"><i data-lucide="download" class="w-4 h-4"></i>Baixar .txt</button>
+            <button onclick="downloadMd()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 h-[36px] sm:h-[34px] bg-naval text-white rounded-md text-[13px] hover:bg-noite transition"><i data-lucide="download" class="w-4 h-4"></i>Baixar .md</button>
           </div>
         </div>
         <div id="resultTitle" class="px-4 sm:px-6 pt-4 text-[14px] font-medium text-ink-700"></div>
@@ -156,6 +156,7 @@
   lucide.createIcons();
   let currentText = "";
   let currentTitle = "";
+  let currentData = null;
   let elapsedTimer = null;
 
   function setSource(btn){ document.querySelectorAll('.source-btn').forEach(b=>b.dataset.active='false'); btn.dataset.active='true'; }
@@ -222,10 +223,12 @@
   // .replace(/</g,'&lt;') no histórico; isto cobre os campos novos de metadados).
   function esc(s){ return String(s==null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function fmtNum(n){ return (n==null) ? null : Number(n).toLocaleString('pt-BR'); }
+  function fmtDate(epoch){ return epoch==null ? '(não disponível)' : new Date(epoch*1000).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo'}); }
 
   function showResult(d){
     currentText = d.texto || d.texto_imagens || '';
     currentTitle = d.titulo || '';
+    currentData = d;
     document.getElementById('resultTitle').textContent = d.titulo || '';
     document.getElementById('resultMeta').innerHTML =
       (d.codigo ? chip('hash', `<span class="mono font-semibold">${d.codigo}</span>`) : '') +
@@ -252,11 +255,82 @@
   }
 
   function copyText(){ navigator.clipboard?.writeText(currentText).then(()=>toast('Copiado para a área de transferência')).catch(()=>{}); }
-  function downloadTxt(){
-    const blob = new Blob([currentText], {type:'text/plain;charset=utf-8'});
+
+  // Ordem pensada pra facilitar quem for ANALISAR o conteúdo depois (sessão
+  // de julgamento, não humano lendo por lazer): 1) o que o post entrega
+  // (julgar promessa x conteúdo real) -> 2) quem postou e alcance (julgar
+  // viés/credibilidade/publi) -> 3) reação do público (confirma ou desmente)
+  // -> 4) dados técnicos de referência, por último.
+  function buildMarkdown(d){
+    const L = [];
+    const tituloCurto = (d.titulo || '(sem legenda)').replace(/\s+/g, ' ').slice(0, 90);
+    L.push(`# ${d.codigo || ''} ${d.autor ? '· @' + d.autor : ''} · ${tituloCurto}`);
+    L.push('');
+    L.push(`> Fonte: ${d.url || '(sem link)'}  `);
+    L.push(`> Processado em ${d.data || '?'} · transcritor.demos.napel.com.br`);
+    L.push('');
+    L.push('## 1. O que o post entrega');
+    L.push('_Avaliar aqui: é promessa vazia (\"comenta que eu mando\") ou entrega conteúdo de verdade (nome, passo, número)?_');
+    L.push('');
+    if (d.tipo_post === 'carrossel') {
+      L.push('**Texto lido nas fotos (OCR):**');
+      L.push('');
+      L.push(d.texto_imagens || '_(nenhum texto legível encontrado nas fotos)_');
+    } else {
+      L.push('**Fala transcrita:**');
+      L.push('');
+      L.push(d.texto || '_(sem fala detectada)_');
+    }
+    L.push('');
+    L.push('**Legenda do post:**');
+    L.push('');
+    L.push(d.titulo || '_(vazia)_');
+    L.push('');
+    L.push('## 2. Quem postou e alcance');
+    L.push('_Avaliar aqui: fonte é confiável nesse assunto? é publicidade disfarçada? o alcance sustenta o quanto o post \"viralizou\"?_');
+    L.push('');
+    L.push(`- **Autor:** ${d.autor ? '@' + d.autor : '(não disponível)'}`);
+    L.push(`- **Publicado em:** ${fmtDate(d.data_publicacao)}`);
+    L.push(`- **Alcance:** ${fmtNum(d.views) ?? '—'} visualizações · ${fmtNum(d.likes) ?? '—'} curtidas · ${fmtNum(d.salvos) ?? '—'} salvos`);
+    L.push(`- **Marcado como anúncio pelo TikTok:** ${d.is_ad === true ? 'SIM' : (d.is_ad === false ? 'Não' : '(não verificado pelo serviço)')}`);
+    L.push(`- **Som/música:** ${d.som_titulo || '(sem nome)'}${d.som_autor ? ' — ' + d.som_autor : ''}`);
+    L.push(`- **Hashtags:** ${(d.hashtags && d.hashtags.length) ? d.hashtags.map(h => '#' + h).join(' ') : '(nenhuma)'}`);
+    L.push('');
+    L.push('## 3. Reação do público (comentários)');
+    L.push('_Avaliar aqui: algum comentário CONFIRMA, DESMENTE ou ALERTA sobre o conteúdo? Isto é amostra parcial — nunca conclua "ninguém reclamou de X" a partir do que não aparece aqui._');
+    L.push('');
+    const coment = d.comentarios || [];
+    if (d.comentarios_total) {
+      L.push(`${coment.length} de ${fmtNum(d.comentarios_total)} comentários no total` +
+        (d.comentarios_incompleto ? ' — **AMOSTRA PARCIAL, não é a lista completa**.' : ' — lista completa devolvida.'));
+      L.push('');
+      coment.forEach((c, i) => {
+        L.push(`${i + 1}. [${c.likes ?? 0} curtidas · ${c.respostas ?? 0} respostas] ${c.texto}`);
+      });
+    } else {
+      L.push('_Nenhum comentário retornado pela busca (pode ser falha temporária da fonte — não significa ausência de reação)._');
+    }
+    L.push('');
+    L.push('## 4. Dados técnicos');
+    L.push('');
+    L.push(`- Tipo de post: ${d.tipo_post === 'carrossel' ? `carrossel (${d.imagens_n ?? '?'} fotos)` : 'vídeo'}`);
+    L.push(`- Idioma: ${(d.idioma || '').toUpperCase()} · Confiança: ${d.confianca}%`);
+    L.push(`- Duração do áudio: ${fmtDur(d.duracao_audio)} · ${d.palavras} palavras`);
+    L.push(`- Modelo: ${d.modelo} · Processado em ${d.tempo_processo}s`);
+    L.push('');
+    L.push('---');
+    L.push('_Não capturado por este serviço: identidade de quem comentou (LGPD), texto sobreposto em vídeo (OCR só existe pra carrossel), produto/link marcado no post, se o áudio é original ou reaproveitado de outro criador._');
+    return L.join('\n');
+  }
+
+  function downloadMd(){
+    if (!currentData) return;
+    const md = buildMarkdown(currentData);
+    const blob = new Blob([md], {type: 'text/markdown;charset=utf-8'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (currentTitle ? currentTitle.replace(/[^\w\-]+/g,'_').slice(0,40) : 'transcricao') + '.txt';
+    a.download = (currentData.codigo ? currentData.codigo.replace('#', '') + '_' : '') +
+      (currentTitle ? currentTitle.replace(/[^\w\-]+/g, '_').slice(0, 40) : 'transcricao') + '.md';
     a.click();
   }
 
