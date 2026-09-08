@@ -70,6 +70,18 @@ def _tem_audio(caminho: str) -> bool:
         return True  # ffprobe indisponível: não bloqueia o fluxo normal
 
 
+def _tem_video(caminho: str) -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v", "-show_entries",
+             "stream=index", "-of", "csv=p=0", caminho],
+            capture_output=True, text=True, timeout=15)
+        return bool(r.stdout.strip())
+    except Exception:
+        return False  # ffprobe indisponível: manda buscar o mp4 pra garantir
+
+
 def _tiktok_fallback(url: str, pasta_tmp: str):
     import urllib.request, urllib.parse
     api = "https://www.tikwm.com/api/"
@@ -307,13 +319,13 @@ def extrair_frames(video_path: str, n_alvo: int = 12) -> list:
     with tempfile.TemporaryDirectory() as fdir:
         padrao = os.path.join(fdir, "q_%03d.jpg")
         try:
-            subprocess.run(
+            p = subprocess.run(
                 ["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", video_path,
                  "-vf", "select='eq(n,0)+gt(scene,0.2)',scale=640:-2",
                  "-vsync", "vfr", "-frames:v", str(n_alvo), "-q:v", "3", padrao],
-                check=False, timeout=90)
+                check=False, timeout=90, capture_output=True, text=True)
         except Exception as e:
-            print(f"[extrair_frames] ffmpeg falhou: {e}", flush=True)
+            print(f"[extrair_frames] ffmpeg nao rodou: {e}", flush=True)
             return []
         for a in sorted(glob.glob(os.path.join(fdir, "q_*.jpg")))[:n_alvo]:
             try:
@@ -321,7 +333,42 @@ def extrair_frames(video_path: str, n_alvo: int = 12) -> list:
                     frames.append(f.read())
             except Exception:
                 continue
+        if not frames:  # nunca em silêncio: loga rc + fim do stderr do ffmpeg
+            err = " | ".join((p.stderr or "").strip().splitlines()[-3:])
+            print(f"[extrair_frames] 0 quadros (rc={p.returncode}): {err}", flush=True)
     return frames
+
+
+def _baixar_mp4_tiktok(url: str, info_dl: dict, pasta_tmp: str):
+    """Baixa o mp4 (COM vídeo) do tikwm só pro OCR de tela, pra quando o arquivo
+    de transcrição veio só com áudio (yt-dlp com cookies pega bestaudio, sem
+    faixa de vídeo — causa raiz do #0120 vazio). Reusa o _tikwm que já está em
+    mãos; senão consulta o tikwm. Falha em silêncio → None (OCR não roda)."""
+    import urllib.request
+    import urllib.parse
+    d = info_dl.get("_tikwm")
+    if not d:
+        try:
+            data = urllib.parse.urlencode({"url": url, "hd": 1}).encode()
+            req = urllib.request.Request(
+                "https://www.tikwm.com/api/", data=data,
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+            d = (json.loads(urllib.request.urlopen(req, timeout=20).read()) or {}).get("data") or {}
+        except Exception as e:
+            print(f"[ocr_video] tikwm nao devolveu o mp4: {e}", flush=True)
+            return None
+    play = d.get("play")
+    if not play:
+        return None
+    try:
+        out = os.path.join(pasta_tmp, "video_ocr.mp4")
+        req = urllib.request.Request(play, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=90) as r, open(out, "wb") as f:
+            f.write(r.read())
+        return out
+    except Exception as e:
+        print(f"[ocr_video] download do mp4 falhou: {e}", flush=True)
+        return None
 
 
 def ocr_video(video_path: str) -> str:
@@ -419,11 +466,12 @@ def _processar(jid, url, modelo, idioma, fonte):
                     detected_prob = getattr(info, "language_probability", 0) or 0
                     # além da fala, ler o texto ESCRITO na tela (o #0115 era só
                     # música + texto na tela → Whisper devolvia 0 palavras e o
-                    # conteúdo real se perdia). Roda pra todo vídeo; se o
-                    # arquivo for só áudio, extrair_frames volta [] e o OCR não
-                    # roda.
+                    # conteúdo real se perdia). O arquivo de transcrição pode
+                    # ter vindo só com áudio (yt-dlp bestaudio) → garante um mp4
+                    # com vídeo (tikwm) só pro OCR.
                     set_job(jid, status="lendo_tela")
-                    texto_imagens = ocr_video(caminho)
+                    video_ocr = caminho if _tem_video(caminho) else _baixar_mp4_tiktok(url, info_dl, tmp)
+                    texto_imagens = ocr_video(video_ocr) if video_ocr else ""
             except Exception as e:
                 set_job(jid, status="erro", erro=f"Falha na transcrição: {e}")
                 return
