@@ -236,41 +236,20 @@ def extrair_metadados(info_dl: dict) -> dict:
     }
 
 
-def ocr_carrossel(image_urls: list) -> str:
-    """Manda as fotos do carrossel pro Gemini ler o texto de cada uma
-    (item 4 do roadmap de 01/09/2026 — ligado só pra carrossel, não pra
-    vídeo, que teve OCR partido entre modelos no teste). Falha SEMPRE em
-    silêncio: sem chave configurada, erro de rede ou de API → volta "" e o
-    julgamento cai pra legenda, que já funcionava antes desta função
-    existir. Custo medido em teste real: ~US$0,024 por carrossel de 12
-    fotos (gemini-3.7-flash, tabela de preço de 01/09/2026)."""
+def _gemini_vision(imagens: list, prompt_texto: str, tag: str) -> str:
+    """Núcleo do OCR por imagem, compartilhado por carrossel e vídeo. Recebe
+    uma lista de bytes JPEG + um prompt e devolve o texto lido pelo
+    gemini-3.7-flash. Falha SEMPRE em silêncio (sem chave / rede / API → "")
+    pra nunca derrubar a transcrição — o julgamento cai pra legenda/fala."""
     api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key or not image_urls:
+    if not api_key or not imagens:
         return ""
     import base64
     import urllib.request
-
-    parts = [{"text": (
-        "Isto e um carrossel de fotos de rede social, com "
-        f"{len(image_urls)} imagens, na ordem em que aparecem. Para CADA "
-        "imagem, leia todo texto visivel nela (titulo, numeros, legenda, "
-        "qualquer coisa escrita). Responda em texto simples, uma linha por "
-        "imagem, no formato 'Imagem N: <texto lido>' — ou 'Imagem N: (sem "
-        "texto legivel)' se não houver nada escrito. Não invente texto que "
-        "não esteja de fato visível na imagem."
-    )}]
-    for img_url in image_urls:
-        try:
-            req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=20) as r:
-                img = r.read()
-            parts.append({"inline_data": {"mime_type": "image/jpeg",
-                                          "data": base64.b64encode(img).decode()}})
-        except Exception:
-            continue  # 1 foto que falhou não derruba as outras 11
-    if len(parts) <= 1:
-        return ""
-
+    parts = [{"text": prompt_texto}]
+    for img in imagens:
+        parts.append({"inline_data": {"mime_type": "image/jpeg",
+                                      "data": base64.b64encode(img).decode()}})
     try:
         body = json.dumps({"contents": [{"parts": parts}]}).encode()
         req = urllib.request.Request(
@@ -279,13 +258,89 @@ def ocr_carrossel(image_urls: list) -> str:
         with urllib.request.urlopen(req, timeout=90) as resp:
             r = json.loads(resp.read())
         u = r.get("usageMetadata", {})
-        print(f"[ocr_carrossel] {len(parts) - 1} fotos · tokens entrada="
+        print(f"[{tag}] {len(parts) - 1} imagens · tokens entrada="
               f"{u.get('promptTokenCount')} saida={u.get('candidatesTokenCount')} "
               f"pensamento={u.get('thoughtsTokenCount')}", flush=True)
         return r["candidates"][0]["content"]["parts"][0]["text"].strip()
     except Exception as e:
-        print(f"[ocr_carrossel] falhou, seguindo só com a legenda: {e}", flush=True)
+        print(f"[{tag}] falhou, seguindo sem OCR: {e}", flush=True)
         return ""
+
+
+def ocr_carrossel(image_urls: list) -> str:
+    """Baixa as fotos do carrossel e manda pro Gemini ler o texto de cada uma
+    (item 4 do roadmap de 01/09/2026). Custo medido: ~US$0,024 por carrossel
+    de 12 fotos (gemini-3.7-flash, tabela de 01/09/2026)."""
+    if not image_urls:
+        return ""
+    import urllib.request
+    imagens = []
+    for img_url in image_urls:
+        try:
+            req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                imagens.append(r.read())
+        except Exception:
+            continue  # 1 foto que falhou não derruba as outras 11
+    prompt = (
+        f"Isto e um carrossel de fotos de rede social, com {len(imagens)} "
+        "imagens, na ordem em que aparecem. Para CADA imagem, leia todo texto "
+        "visivel nela (titulo, numeros, legenda, qualquer coisa escrita). "
+        "Responda em texto simples, uma linha por imagem, no formato "
+        "'Imagem N: <texto lido>' — ou 'Imagem N: (sem texto legivel)' se não "
+        "houver nada escrito. Não invente texto que não esteja de fato "
+        "visível na imagem.")
+    return _gemini_vision(imagens, prompt, "ocr_carrossel")
+
+
+def extrair_frames(video_path: str, n_alvo: int = 12) -> list:
+    """Tira alguns quadros do vídeo pro OCR do texto na tela. Pega o 1º quadro
+    + os pontos de corte de cena (onde a legenda embutida costuma trocar): um
+    vídeo de slides rende ~1 quadro por slide; um de tomada única rende só o
+    1º (o texto fica igual o tempo todo). ffmpeg já está no container
+    (Dockerfile). Devolve lista de bytes JPEG — vazia se o arquivo não tiver
+    faixa de vídeo (fallback só de áudio) ou o ffmpeg falhar, e aí o OCR
+    simplesmente não roda. Limite: texto que aparece por <1s numa tomada única
+    e sem corte de cena pode escapar."""
+    import subprocess
+    frames = []
+    with tempfile.TemporaryDirectory() as fdir:
+        padrao = os.path.join(fdir, "q_%03d.jpg")
+        try:
+            subprocess.run(
+                ["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", video_path,
+                 "-vf", "select='eq(n,0)+gt(scene,0.2)',scale=640:-2",
+                 "-vsync", "vfr", "-frames:v", str(n_alvo), "-q:v", "3", padrao],
+                check=False, timeout=90)
+        except Exception as e:
+            print(f"[extrair_frames] ffmpeg falhou: {e}", flush=True)
+            return []
+        for a in sorted(glob.glob(os.path.join(fdir, "q_*.jpg")))[:n_alvo]:
+            try:
+                with open(a, "rb") as f:
+                    frames.append(f.read())
+            except Exception:
+                continue
+    return frames
+
+
+def ocr_video(video_path: str) -> str:
+    """Lê o texto ESCRITO NA TELA do vídeo (legenda embutida, chamada, números)
+    — o que o Whisper não pega porque não é fala. Extrai quadros e manda pro
+    mesmo Gemini do carrossel. Roda pra todo vídeo; falha em silêncio como o
+    resto (sem frame / sem chave / erro → "")."""
+    frames = extrair_frames(video_path)
+    if not frames:
+        return ""
+    prompt = (
+        f"Estes sao {len(frames)} quadros extraidos de um MESMO video curto de "
+        "rede social, em ordem de tempo. Para CADA quadro, leia TODO texto "
+        "escrito na tela (legenda embutida, titulo, numeros, chamada, qualquer "
+        "coisa sobreposta ao video). Responda em texto simples, uma linha por "
+        "quadro: 'Quadro N: <texto lido>' — ou 'Quadro N: (sem texto na tela)'. "
+        "Quadros seguidos costumam repetir o mesmo texto; pode repetir. NUNCA "
+        "invente texto que não esteja de fato visível.")
+    return _gemini_vision(frames, prompt, "ocr_video")
 
 
 def buscar_comentarios(url: str, count: int = 20) -> dict:
@@ -362,6 +417,13 @@ def _processar(jid, url, modelo, idioma, fonte):
                     dur = float(getattr(info, "duration", 0) or info_dl.get("duration") or 0)
                     detected_lang = getattr(info, "language", lang or "?")
                     detected_prob = getattr(info, "language_probability", 0) or 0
+                    # além da fala, ler o texto ESCRITO na tela (o #0115 era só
+                    # música + texto na tela → Whisper devolvia 0 palavras e o
+                    # conteúdo real se perdia). Roda pra todo vídeo; se o
+                    # arquivo for só áudio, extrair_frames volta [] e o OCR não
+                    # roda.
+                    set_job(jid, status="lendo_tela")
+                    texto_imagens = ocr_video(caminho)
             except Exception as e:
                 set_job(jid, status="erro", erro=f"Falha na transcrição: {e}")
                 return

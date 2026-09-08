@@ -280,6 +280,10 @@
       L.push('**Fala transcrita:**');
       L.push('');
       L.push(d.texto || '_(sem fala detectada)_');
+      L.push('');
+      L.push('**Texto lido na tela do vídeo (OCR):**');
+      L.push('');
+      L.push(d.texto_imagens || '_(nenhum texto na tela detectado)_');
     }
     L.push('');
     L.push('**Legenda do post:**');
@@ -323,7 +327,7 @@
     L.push(`- Modelo: ${d.modelo} · Processado em ${d.tempo_processo}s`);
     L.push('');
     L.push('---');
-    L.push('_Não capturado por este serviço: identidade de quem comentou (LGPD), texto sobreposto em vídeo (OCR só existe pra carrossel), produto/link marcado no post, se o áudio é original ou reaproveitado de outro criador._');
+    L.push('_Não capturado por este serviço: identidade de quem comentou (LGPD), produto/link marcado no post, se o áudio é original ou reaproveitado de outro criador._');
     return L.join('\n');
   }
 
