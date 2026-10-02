@@ -13,72 +13,72 @@
   tailwind.config = {
     theme: { extend: {
       colors: {
-        naval:'#113C58', noite:'#042C48', ceu:'#7DA4C6', 'ceu-claro':'#B5D4E8', gelo:'#EBF7FA',
-        ink:{50:'#F6FBFC',100:'#EBF7FA',200:'#D6E7F1',300:'#B5D4E8',400:'#7DA4C6',500:'#3D6889',600:'#27557A',700:'#113C58',800:'#0A3450',900:'#042C48'},
-        'page-bg':'#FAFCFD', border:{DEFAULT:'#E4EEF3',strong:'#CFDEE7'},
-        success:{DEFAULT:'#10B981',fg:'#065F46',bg:'#D1FAE5'}, warn:{DEFAULT:'#F59E0B',fg:'#92400E',bg:'#FEF3C7'},
-        danger:{DEFAULT:'#EF4444',fg:'#991B1B',bg:'#FEE2E2'}, info:{DEFAULT:'#7DA4C6',fg:'#113C58',bg:'#EBF7FA'},
+        nv:{ bg:'#042C48', surface:'#0A3450', 'surface-2':'#113C58', border:'#113C58', 'border-strong':'#27557A',
+             ink:'#EBF7FA', soft:'#B5D4E8', faint:'#7DA4C6', primary:'#74A9D7', 'primary-hover':'#B5D4E8',
+             success:'#34D399', 'success-bg':'rgba(16,185,129,.16)', warn:'#FBBF24', 'warn-bg':'rgba(245,158,11,.16)',
+             danger:'#F87171', 'danger-bg':'rgba(239,68,68,.16)', info:'#B5D4E8', 'info-bg':'rgba(125,164,198,.18)' },
       },
       fontFamily:{ sans:['Saira','-apple-system','Segoe UI','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] },
-      boxShadow:{ sm:'0 1px 2px rgba(4,44,72,0.06), 0 1px 3px rgba(4,44,72,0.04)', md:'0 4px 12px rgba(4,44,72,0.08), 0 2px 4px rgba(4,44,72,0.04)', lg:'0 10px 30px rgba(4,44,72,0.12), 0 4px 10px rgba(4,44,72,0.06)' },
+      boxShadow:{ sm:'0 1px 2px rgba(0,0,0,.40)', md:'0 1px 2px rgba(0,0,0,.35), 0 14px 30px -16px rgba(0,0,0,.70)', lg:'0 10px 30px rgba(0,0,0,.45), 0 4px 10px rgba(0,0,0,.30)' },
     }}
   }
 </script>
 <style>
+  html { background:#042C48; color:#EBF7FA; color-scheme:dark; }
   html, body { font-family:'Saira',system-ui,sans-serif; }
   .mono { font-family:'JetBrains Mono',monospace; }
   ::-webkit-scrollbar { width:10px; height:10px; }
-  ::-webkit-scrollbar-thumb { background:#CFDEE7; border-radius:999px; border:2px solid #FAFCFD; }
+  ::-webkit-scrollbar-thumb { background:#27557A; border-radius:999px; border:2px solid #042C48; }
   .spin { animation:spin .8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
   .fade-up { animation:fadeUp .35s ease both; }
-  .source-btn[data-active="true"] { border-color:#113C58; background:#EBF7FA; color:#113C58; }
+  .source-btn[data-active="true"], .source-btn[data-active="true"]:hover { border-color:#74A9D7; background:#74A9D7; color:#042C48; }
 </style>
 </head>
-<body class="bg-page-bg text-ink-900 antialiased">
+<body class="bg-nv-bg text-nv-ink antialiased">
 
 <div class="flex min-h-screen">
 
   <!-- MAIN (sidebar removida: já existe a do Clavis ao redor do iframe) -->
   <main class="flex-1 min-w-0">
-    <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-border px-4 sm:px-7 py-3 sm:py-4">
+    <header class="sticky top-0 z-10 bg-nv-surface/95 backdrop-blur border-b border-nv-border-strong px-4 sm:px-7 py-3 sm:py-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <div class="flex items-center gap-1.5 text-[12px] text-ink-500 mb-1"><span>Vida</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i><span class="text-ink-700">Transcritor</span></div>
+          <div class="flex items-center gap-1.5 text-[12px] text-nv-soft mb-1"><span>Vida</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i><span class="text-nv-ink">Transcritor</span></div>
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-[20px] sm:text-[24px] font-bold tracking-[-0.015em] text-ink-900">Transcritor de Vídeos</h1>
-            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-success-bg text-success-fg">Demo real</span>
+            <h1 class="text-[20px] sm:text-[24px] font-bold tracking-[-0.015em] text-nv-ink">Transcritor de Vídeos</h1>
+            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-nv-success-bg text-nv-success">Demo real</span>
           </div>
         </div>
-        <div class="flex items-center gap-2 text-[11px] sm:text-[12px] text-ink-500"><i data-lucide="cpu" class="w-4 h-4 flex-shrink-0"></i><span class="mono">faster-whisper · local · custo zero</span></div>
+        <div class="flex items-center gap-2 text-[11px] sm:text-[12px] text-nv-soft"><i data-lucide="cpu" class="w-4 h-4 flex-shrink-0"></i><span class="mono">faster-whisper · local · custo zero</span></div>
       </div>
     </header>
 
     <div class="p-4 sm:p-7 max-w-[1100px] mx-auto space-y-4 sm:space-y-5">
 
       <!-- ENTRADA -->
-      <section class="bg-white rounded-xl border border-border shadow-sm p-4 sm:p-6">
-        <h2 class="text-[16px] sm:text-[18px] font-semibold tracking-[-0.01em] mb-4 flex items-center gap-2"><i data-lucide="link-2" class="w-[18px] h-[18px] text-ceu"></i>Nova transcrição</h2>
+      <section class="bg-nv-surface rounded-xl border border-nv-border shadow-sm p-4 sm:p-6">
+        <h2 class="text-[16px] sm:text-[18px] font-semibold tracking-[-0.01em] mb-4 flex items-center gap-2"><i data-lucide="link-2" class="w-[18px] h-[18px] text-nv-primary"></i>Nova transcrição</h2>
 
-        <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Plataforma</label>
+        <label class="text-[12px] font-medium text-nv-soft uppercase tracking-wide">Plataforma</label>
         <div class="flex flex-wrap gap-2 mt-1.5 mb-4">
-          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-border-strong text-[12px] sm:text-[13px] text-ink-600 hover:bg-gelo transition" data-active="true" data-fonte="TikTok" onclick="setSource(this)"><i data-lucide="music-2" class="w-4 h-4"></i>TikTok</button>
-          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-border-strong text-[12px] sm:text-[13px] text-ink-600 hover:bg-gelo transition" data-fonte="YouTube" onclick="setSource(this)"><i data-lucide="youtube" class="w-4 h-4"></i>YouTube</button>
-          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-border-strong text-[12px] sm:text-[13px] text-ink-600 hover:bg-gelo transition" data-fonte="Instagram" onclick="setSource(this)"><i data-lucide="instagram" class="w-4 h-4"></i>Instagram</button>
-          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-border-strong text-[12px] sm:text-[13px] text-ink-600 hover:bg-gelo transition" data-fonte="Outro" onclick="setSource(this)"><i data-lucide="globe" class="w-4 h-4"></i>Outro</button>
+          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-nv-border-strong text-[12px] sm:text-[13px] text-nv-soft hover:bg-nv-surface-2 hover:text-nv-ink transition" data-active="true" data-fonte="TikTok" onclick="setSource(this)"><i data-lucide="music-2" class="w-4 h-4"></i>TikTok</button>
+          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-nv-border-strong text-[12px] sm:text-[13px] text-nv-soft hover:bg-nv-surface-2 hover:text-nv-ink transition" data-fonte="YouTube" onclick="setSource(this)"><i data-lucide="youtube" class="w-4 h-4"></i>YouTube</button>
+          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-nv-border-strong text-[12px] sm:text-[13px] text-nv-soft hover:bg-nv-surface-2 hover:text-nv-ink transition" data-fonte="Instagram" onclick="setSource(this)"><i data-lucide="instagram" class="w-4 h-4"></i>Instagram</button>
+          <button class="source-btn flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-lg border border-nv-border-strong text-[12px] sm:text-[13px] text-nv-soft hover:bg-nv-surface-2 hover:text-nv-ink transition" data-fonte="Outro" onclick="setSource(this)"><i data-lucide="globe" class="w-4 h-4"></i>Outro</button>
         </div>
 
-        <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Link do vídeo</label>
+        <label class="text-[12px] font-medium text-nv-soft uppercase tracking-wide">Link do vídeo</label>
         <div class="relative mt-1.5">
-          <i data-lucide="link" class="w-4 h-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input id="urlInput" type="url" inputmode="url" class="w-full h-[44px] sm:h-[42px] pl-9 pr-3 rounded-md border border-border-strong text-[14px] sm:text-[13.5px] mono text-ink-800 focus:outline-none focus:border-naval focus:ring-2 focus:ring-ceu/30" placeholder="Cole aqui o link do vídeo…">
+          <i data-lucide="link" class="w-4 h-4 text-nv-faint absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input id="urlInput" type="url" inputmode="url" class="w-full h-[44px] sm:h-[42px] pl-9 pr-3 rounded-md border border-nv-border-strong bg-nv-bg text-[14px] sm:text-[13.5px] mono text-nv-ink placeholder:text-nv-faint [color-scheme:dark] focus:outline-none focus:border-nv-primary focus:ring-2 focus:ring-nv-primary/30" placeholder="Cole aqui o link do vídeo…">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           <div>
-            <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Modelo Whisper</label>
-            <select id="modelSel" class="w-full h-[44px] sm:h-[42px] mt-1.5 px-3 rounded-md border border-border-strong text-[14px] sm:text-[13.5px] text-ink-800 bg-white focus:outline-none focus:border-naval">
+            <label class="text-[12px] font-medium text-nv-soft uppercase tracking-wide">Modelo Whisper</label>
+            <select id="modelSel" class="w-full h-[44px] sm:h-[42px] mt-1.5 px-3 rounded-md border border-nv-border-strong text-[14px] sm:text-[13.5px] text-nv-ink bg-nv-bg [color-scheme:dark] focus:outline-none focus:border-nv-primary">
               <option value="tiny">tiny · rapidíssimo (75 MB)</option>
               <option value="base">base · rápido (145 MB)</option>
               <option value="small" selected>small · recomendado PT-BR (480 MB)</option>
@@ -87,8 +87,8 @@
             </select>
           </div>
           <div>
-            <label class="text-[12px] font-medium text-ink-600 uppercase tracking-wide">Idioma</label>
-            <select id="langSel" class="w-full h-[44px] sm:h-[42px] mt-1.5 px-3 rounded-md border border-border-strong text-[14px] sm:text-[13.5px] text-ink-800 bg-white focus:outline-none focus:border-naval">
+            <label class="text-[12px] font-medium text-nv-soft uppercase tracking-wide">Idioma</label>
+            <select id="langSel" class="w-full h-[44px] sm:h-[42px] mt-1.5 px-3 rounded-md border border-nv-border-strong text-[14px] sm:text-[13.5px] text-nv-ink bg-nv-bg [color-scheme:dark] focus:outline-none focus:border-nv-primary">
               <option value="auto" selected>Detectar automaticamente</option>
               <option value="pt">Português (forçar)</option>
               <option value="en">Inglês (forçar)</option>
@@ -98,48 +98,48 @@
         </div>
 
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-5">
-          <span class="text-[11px] sm:text-[12px] text-ink-500 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-success flex-shrink-0"></i>Processado localmente — nada sai do seu computador</span>
-          <button id="btnTranscrever" onclick="runTranscricao()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 h-[46px] sm:h-[42px] bg-naval hover:bg-noite text-white text-[14px] font-semibold rounded-md shadow-sm transition"><i data-lucide="sparkles" class="w-[18px] h-[18px]"></i>Transcrever</button>
+          <span class="text-[11px] sm:text-[12px] text-nv-soft flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-nv-success flex-shrink-0"></i>Processado localmente — nada sai do seu computador</span>
+          <button id="btnTranscrever" onclick="runTranscricao()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 h-[46px] sm:h-[42px] bg-nv-primary hover:bg-nv-primary-hover disabled:bg-nv-surface-2 disabled:text-nv-soft text-nv-bg text-[14px] font-semibold rounded-md shadow-sm transition"><i data-lucide="sparkles" class="w-[18px] h-[18px]"></i>Transcrever</button>
         </div>
       </section>
 
       <!-- PROCESSANDO -->
-      <section id="processing" class="hidden bg-white rounded-xl border border-border shadow-sm p-4 sm:p-6 fade-up">
+      <section id="processing" class="hidden bg-nv-surface rounded-xl border border-nv-border shadow-sm p-4 sm:p-6 fade-up">
         <div class="flex items-center gap-3">
-          <i data-lucide="loader-2" class="w-5 h-5 text-naval spin flex-shrink-0"></i>
+          <i data-lucide="loader-2" class="w-5 h-5 text-nv-primary spin flex-shrink-0"></i>
           <div class="min-w-0">
             <h2 id="procTitle" class="text-[15px] sm:text-[16px] font-semibold tracking-[-0.01em]">Iniciando…</h2>
-            <p class="text-[12px] sm:text-[12.5px] text-ink-500 mt-0.5">A 1ª vez com cada modelo baixa os pesos do Whisper — pode levar de alguns segundos a poucos minutos. Decorrido: <span id="elapsed" class="mono text-ink-700">0s</span></p>
+            <p class="text-[12px] sm:text-[12.5px] text-nv-soft mt-0.5">A 1ª vez com cada modelo baixa os pesos do Whisper — pode levar de alguns segundos a poucos minutos. Decorrido: <span id="elapsed" class="mono text-nv-ink">0s</span></p>
           </div>
         </div>
       </section>
 
       <!-- ERRO -->
-      <section id="errorBox" class="hidden bg-danger-bg border-l-[3px] border-danger rounded-md px-4 sm:px-5 py-3 flex items-start gap-2.5 fade-up">
-        <i data-lucide="alert-circle" class="w-5 h-5 text-danger mt-0.5 flex-shrink-0"></i>
-        <div class="min-w-0"><div class="text-[14px] font-medium text-danger-fg">Não foi possível transcrever</div><div id="errorMsg" class="text-[13px] text-danger-fg/90 mt-0.5 break-words"></div></div>
+      <section id="errorBox" class="hidden bg-nv-danger-bg border-l-[3px] border-nv-danger rounded-md px-4 sm:px-5 py-3 flex items-start gap-2.5 fade-up">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-nv-danger mt-0.5 flex-shrink-0"></i>
+        <div class="min-w-0"><div class="text-[14px] font-medium text-[#FCA5A5]">Não foi possível transcrever</div><div id="errorMsg" class="text-[13px] text-[#FCA5A5] mt-0.5 break-words"></div></div>
       </section>
 
       <!-- RESULTADO -->
-      <section id="result" class="hidden bg-white rounded-xl border border-border shadow-sm overflow-hidden fade-up">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-border bg-ink-50">
-          <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-[18px] h-[18px] text-success flex-shrink-0"></i><h2 class="text-[16px] sm:text-[18px] font-semibold tracking-[-0.01em]">Transcrição pronta</h2></div>
+      <section id="result" class="hidden bg-nv-surface rounded-xl border border-nv-border shadow-sm overflow-hidden fade-up">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-nv-border-strong bg-nv-surface-2">
+          <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-[18px] h-[18px] text-nv-success flex-shrink-0"></i><h2 class="text-[16px] sm:text-[18px] font-semibold tracking-[-0.01em]">Transcrição pronta</h2></div>
           <div class="flex items-center gap-2">
-            <button onclick="copyText()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 h-[36px] sm:h-[34px] border border-border-strong rounded-md text-[13px] text-naval hover:bg-gelo transition"><i data-lucide="copy" class="w-4 h-4"></i>Copiar</button>
-            <button onclick="downloadMd()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 h-[36px] sm:h-[34px] bg-naval text-white rounded-md text-[13px] hover:bg-noite transition"><i data-lucide="download" class="w-4 h-4"></i>Baixar .md</button>
+            <button onclick="copyText()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 h-[36px] sm:h-[34px] border border-nv-border-strong rounded-md text-[13px] text-nv-ink hover:bg-nv-border-strong transition"><i data-lucide="copy" class="w-4 h-4"></i>Copiar</button>
+            <button onclick="downloadMd()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 h-[36px] sm:h-[34px] bg-nv-primary text-nv-bg rounded-md text-[13px] hover:bg-nv-primary-hover transition"><i data-lucide="download" class="w-4 h-4"></i>Baixar .md</button>
           </div>
         </div>
-        <div id="resultTitle" class="px-4 sm:px-6 pt-4 text-[14px] font-medium text-ink-700"></div>
+        <div id="resultTitle" class="px-4 sm:px-6 pt-4 text-[14px] font-medium text-nv-ink"></div>
         <div id="resultMeta" class="flex flex-wrap gap-2 px-4 sm:px-6 pt-3"></div>
-        <div id="resultExtra" class="px-4 sm:px-6 pt-2 text-[12px] text-ink-500 space-y-0.5"></div>
-        <div id="transcriptBox" class="px-4 sm:px-6 py-4 sm:py-5 text-[14px] leading-[1.7] text-ink-800 whitespace-pre-wrap break-words"></div>
+        <div id="resultExtra" class="px-4 sm:px-6 pt-2 text-[12px] text-nv-soft space-y-0.5"></div>
+        <div id="transcriptBox" class="px-4 sm:px-6 py-4 sm:py-5 text-[14px] leading-[1.7] text-nv-ink whitespace-pre-wrap break-words"></div>
       </section>
 
       <!-- HISTÓRICO -->
-      <section class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-        <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
-          <h2 class="text-[16px] sm:text-[18px] font-semibold tracking-[-0.01em] flex items-center gap-2"><i data-lucide="history" class="w-[18px] h-[18px] text-ceu"></i>Histórico</h2>
-          <button onclick="clearHistory()" class="inline-flex items-center gap-1.5 px-3 h-[34px] border border-border-strong rounded-md text-[13px] text-ink-600 hover:bg-gelo transition"><i data-lucide="trash-2" class="w-4 h-4"></i><span class="hidden sm:inline">Limpar</span></button>
+      <section class="bg-nv-surface rounded-xl border border-nv-border shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-nv-border-strong">
+          <h2 class="text-[16px] sm:text-[18px] font-semibold tracking-[-0.01em] flex items-center gap-2"><i data-lucide="history" class="w-[18px] h-[18px] text-nv-primary"></i>Histórico</h2>
+          <button onclick="clearHistory()" class="inline-flex items-center gap-1.5 px-3 h-[34px] border border-nv-border-strong rounded-md text-[13px] text-nv-soft hover:bg-nv-surface-2 hover:text-nv-ink transition"><i data-lucide="trash-2" class="w-4 h-4"></i><span class="hidden sm:inline">Limpar</span></button>
         </div>
         <div id="historyBody"></div>
       </section>
@@ -148,8 +148,8 @@
   </main>
 </div>
 
-<div id="toast" class="hidden fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-white rounded-lg shadow-lg border-l-[3px] border-success px-4 py-3 flex items-center gap-2.5 text-[13.5px] max-w-[calc(100vw-2rem)] sm:min-w-[280px]">
-  <i data-lucide="check-circle-2" class="w-5 h-5 text-success flex-shrink-0"></i><span id="toastMsg"></span>
+<div id="toast" class="hidden fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-nv-surface-2 rounded-lg shadow-lg border-l-[3px] border-nv-success px-4 py-3 flex items-center gap-2.5 text-[13.5px] max-w-[calc(100vw-2rem)] sm:min-w-[280px]">
+  <i data-lucide="check-circle-2" class="w-5 h-5 text-nv-success flex-shrink-0"></i><span id="toastMsg"></span>
 </div>
 
 <script>
@@ -172,7 +172,7 @@
     const url = document.getElementById('urlInput').value.trim();
     if(!url){ showError('Cole o link do vídeo primeiro.'); return; }
     const btn = document.getElementById('btnTranscrever');
-    btn.disabled=true; btn.classList.add('opacity-60','cursor-not-allowed');
+    btn.disabled=true; btn.classList.add('cursor-not-allowed');
     document.getElementById('result').classList.add('hidden');
     document.getElementById('errorBox').classList.add('hidden');
     document.getElementById('processing').classList.remove('hidden');
@@ -183,7 +183,7 @@
     elapsedTimer = setInterval(()=>{ elEl.textContent = Math.round((Date.now()-t0)/1000)+'s'; }, 500);
 
     const STATUS = { fila:'Na fila…', baixando:'Baixando áudio do vídeo…', transcrevendo:'Transcrevendo a fala…' };
-    const finish = ()=>{ clearInterval(elapsedTimer); document.getElementById('processing').classList.add('hidden'); btn.disabled=false; btn.classList.remove('opacity-60','cursor-not-allowed'); };
+    const finish = ()=>{ clearInterval(elapsedTimer); document.getElementById('processing').classList.add('hidden'); btn.disabled=false; btn.classList.remove('cursor-not-allowed'); };
 
     try {
       const resp = await fetch('/api/transcrever', {
@@ -216,7 +216,7 @@
     document.getElementById('errorBox').scrollIntoView({behavior:'smooth',block:'center'});
   }
 
-  function chip(icon, html){ return `<span class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-gelo text-ink-700"><i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${html}</span>`; }
+  function chip(icon, html){ return `<span class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-nv-surface-2 text-nv-ink"><i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${html}</span>`; }
 
   // Texto vindo do post do TikTok (autor, som, hashtags) é conteúdo de terceiro —
   // nunca jogar direto em innerHTML sem escapar (o vídeo/legenda já passam por
@@ -232,11 +232,11 @@
     document.getElementById('resultTitle').textContent = d.titulo || '';
     document.getElementById('resultMeta').innerHTML =
       (d.codigo ? chip('hash', `<span class="mono font-semibold">${d.codigo}</span>`) : '') +
-      (d.url ? `<a href="${d.url}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-gelo text-ink-700 hover:bg-ceu/10 hover:text-ceu transition"><i data-lucide="external-link" class="w-3.5 h-3.5"></i>Abrir link original</a>` : '') +
-      (d.autor ? `<a href="https://www.tiktok.com/@${encodeURIComponent(d.autor)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-gelo text-ink-700 hover:bg-ceu/10 hover:text-ceu transition"><i data-lucide="user" class="w-3.5 h-3.5"></i>@${esc(d.autor)}</a>` : '') +
+      (d.url ? `<a href="${d.url}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-nv-surface-2 text-nv-ink hover:bg-nv-border-strong transition"><i data-lucide="external-link" class="w-3.5 h-3.5"></i>Abrir link original</a>` : '') +
+      (d.autor ? `<a href="https://www.tiktok.com/@${encodeURIComponent(d.autor)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-nv-surface-2 text-nv-ink hover:bg-nv-border-strong transition"><i data-lucide="user" class="w-3.5 h-3.5"></i>@${esc(d.autor)}</a>` : '') +
       (d.tipo_post === 'carrossel' ? chip('images', `Carrossel <span class="mono">${d.imagens_n ?? '?'}</span> fotos`) : '') +
-      (d.is_ad === true ? `<span class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-warn-bg text-warn-fg font-medium"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i>Publi (marcado pelo TikTok)</span>` : '') +
-      chip('languages', `${langName(d.idioma)} <span class="text-ink-400">·</span> <span class="mono">conf. ${d.confianca}%</span>`) +
+      (d.is_ad === true ? `<span class="inline-flex items-center gap-1.5 text-[11px] sm:text-[12px] px-2 sm:px-2.5 py-1 rounded-md bg-nv-warn-bg text-nv-warn font-medium"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i>Publi (marcado pelo TikTok)</span>` : '') +
+      chip('languages', `${langName(d.idioma)} <span class="text-nv-soft">·</span> <span class="mono">conf. ${d.confianca}%</span>`) +
       chip('clock', `Áudio <span class="mono">${fmtDur(d.duracao_audio)}</span>`) +
       chip('type', `<span class="mono">${d.palavras}</span> palavras`) +
       chip('timer', `Processado em <span class="mono">${d.tempo_processo}s</span>`) +
@@ -350,9 +350,9 @@
     const body = document.getElementById('historyBody');
     if(!hist.length){
       body.innerHTML = `<div class="flex flex-col items-center justify-center py-10 sm:py-12 text-center px-4">
-        <i data-lucide="captions" class="w-10 h-10 sm:w-12 sm:h-12 text-ink-300"></i>
-        <div class="mt-3 text-[14px] sm:text-[15px] font-semibold text-ink-700">Nenhuma transcrição ainda</div>
-        <div class="text-[12px] sm:text-[13px] text-ink-500 mt-1">Cole um link acima e clique em Transcrever para começar.</div>
+        <i data-lucide="captions" class="w-10 h-10 sm:w-12 sm:h-12 text-nv-faint"></i>
+        <div class="mt-3 text-[14px] sm:text-[15px] font-semibold text-nv-ink">Nenhuma transcrição ainda</div>
+        <div class="text-[12px] sm:text-[13px] text-nv-soft mt-1">Cole um link acima e clique em Transcrever para começar.</div>
       </div>`;
       lucide.createIcons(); return;
     }
@@ -361,31 +361,31 @@
     const isMobile = window.innerWidth < 640;
     if(isMobile){
       let cards = hist.map((h,i)=>`
-        <div class="px-4 py-3 border-b border-border hover:bg-ink-100 cursor-pointer transition" onclick='openHist(${i})'>
+        <div class="px-4 py-3 border-b border-nv-border-strong hover:bg-nv-surface-2 cursor-pointer transition" onclick='openHist(${i})'>
           <div class="flex items-center justify-between mb-1">
-            <span class="inline-flex items-center gap-1.5 text-[13px] font-medium"><span class="mono text-[11px] px-1.5 py-0.5 rounded bg-ceu/10 text-ceu font-semibold">${h.codigo||'—'}</span><i data-lucide="${h.tipo_post==='carrossel' ? 'images' : (FONTE_ICON[h.fonte]||'globe')}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}${h.is_ad===true ? ' <span class="text-[10px] px-1 rounded bg-warn-bg text-warn-fg">Publi</span>' : ''}</span>
+            <span class="inline-flex items-center gap-1.5 text-[13px] font-medium"><span class="mono text-[11px] px-1.5 py-0.5 rounded bg-nv-info-bg text-nv-info font-semibold">${h.codigo||'—'}</span><i data-lucide="${h.tipo_post==='carrossel' ? 'images' : (FONTE_ICON[h.fonte]||'globe')}" class="w-4 h-4 text-nv-soft"></i>${h.fonte||'Outro'}${h.is_ad===true ? ' <span class="text-[10px] px-1 rounded bg-nv-warn-bg text-nv-warn">Publi</span>' : ''}</span>
             <div class="flex items-center gap-2">
-              <span class="text-[11px] px-1.5 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span>
-              <span class="text-[11px] text-ink-500 mono">${h.data||''}</span>
+              <span class="text-[11px] px-1.5 py-0.5 rounded bg-nv-surface-2 text-nv-ink">${(h.idioma||'').toUpperCase()}</span>
+              <span class="text-[11px] text-nv-soft mono">${h.data||''}</span>
             </div>
           </div>
-          <div class="text-[13px] text-ink-700 truncate">${(h.titulo||h.texto||h.texto_imagens||'').replace(/</g,'&lt;').slice(0,80) || '—'}</div>
-          ${h.autor ? `<div class="text-[11px] text-ink-500 mt-0.5">@${esc(h.autor)}</div>` : ''}
+          <div class="text-[13px] text-nv-ink truncate">${(h.titulo||h.texto||h.texto_imagens||'').replace(/</g,'&lt;').slice(0,80) || '—'}</div>
+          ${h.autor ? `<div class="text-[11px] text-nv-soft mt-0.5">@${esc(h.autor)}</div>` : ''}
         </div>`).join('');
       body.innerHTML = cards;
     } else {
       let rows = hist.map((h,i)=>`
-        <tr class="hover:bg-ink-100 cursor-pointer transition" onclick='openHist(${i})'>
-          <td class="px-4 py-3 mono text-[12px] font-semibold text-ceu">${h.codigo||'—'}</td>
-          <td class="px-6 py-3"><span class="inline-flex items-center gap-1.5"><i data-lucide="${h.tipo_post==='carrossel' ? 'images' : (FONTE_ICON[h.fonte]||'globe')}" class="w-4 h-4 text-ink-500"></i>${h.fonte||'Outro'}</span></td>
-          <td class="px-4 py-3 text-ink-500 truncate max-w-[140px]">${h.autor ? '@'+esc(h.autor) : '—'}${h.is_ad===true ? ' <span class="text-[10px] px-1 rounded bg-warn-bg text-warn-fg">Publi</span>' : ''}</td>
-          <td class="px-4 py-3 text-ink-700 truncate max-w-[320px]">${(h.titulo||h.texto||h.texto_imagens||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
-          <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded bg-gelo text-ink-700">${(h.idioma||'').toUpperCase()}</span></td>
-          <td class="px-4 py-3 text-ink-500 mono">${h.data||''}</td>
+        <tr class="hover:bg-nv-surface-2 cursor-pointer transition" onclick='openHist(${i})'>
+          <td class="px-4 py-3 mono text-[12px] font-semibold text-nv-primary">${h.codigo||'—'}</td>
+          <td class="px-6 py-3"><span class="inline-flex items-center gap-1.5"><i data-lucide="${h.tipo_post==='carrossel' ? 'images' : (FONTE_ICON[h.fonte]||'globe')}" class="w-4 h-4 text-nv-soft"></i>${h.fonte||'Outro'}</span></td>
+          <td class="px-4 py-3 text-nv-soft truncate max-w-[140px]">${h.autor ? '@'+esc(h.autor) : '—'}${h.is_ad===true ? ' <span class="text-[10px] px-1 rounded bg-nv-warn-bg text-nv-warn">Publi</span>' : ''}</td>
+          <td class="px-4 py-3 text-nv-ink truncate max-w-[320px]">${(h.titulo||h.texto||h.texto_imagens||'').replace(/</g,'&lt;').slice(0,90) || '—'}</td>
+          <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded bg-nv-surface-2 text-nv-ink">${(h.idioma||'').toUpperCase()}</span></td>
+          <td class="px-4 py-3 text-nv-soft mono">${h.data||''}</td>
         </tr>`).join('');
-      body.innerHTML = `<table class="w-full text-[13px]"><thead><tr class="text-left text-ink-600 bg-ink-50 text-[12px] uppercase tracking-wide">
+      body.innerHTML = `<table class="w-full text-[13px]"><thead><tr class="text-left text-nv-soft bg-nv-surface-2 text-[12px] uppercase tracking-wide">
         <th class="px-4 py-2.5 font-semibold">Código</th><th class="px-6 py-2.5 font-semibold">Fonte</th><th class="px-4 py-2.5 font-semibold">Autor</th><th class="px-4 py-2.5 font-semibold">Título / Trecho</th><th class="px-4 py-2.5 font-semibold">Idioma</th><th class="px-4 py-2.5 font-semibold">Data</th>
-        </tr></thead><tbody class="divide-y divide-border">${rows}</tbody></table>`;
+        </tr></thead><tbody class="divide-y divide-nv-border-strong">${rows}</tbody></table>`;
     }
     window._hist = hist;
     lucide.createIcons();
