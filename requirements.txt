@@ -3,3 +3,4 @@ uvicorn[standard]
 yt-dlp[default]>=2026.7.4
 curl_cffi
 faster-whisper
+av<19
