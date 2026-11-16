@@ -168,6 +168,34 @@
 
   function toast(msg){ const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500); }
 
+  // Histórico por pessoa: dentro do Clavis Renato, pede o token do Clavis à janela de fora
+  // (mesmo método do Expensa) e manda em cada chamada. Fora do Clavis, sem token.
+  const NO_CLAVIS = window.parent !== window;
+  let _token = null, _pedido = null, _semAcesso = false;
+  function pedirToken(){
+    if(!NO_CLAVIS) return Promise.resolve(null);
+    if(_pedido) return _pedido;
+    _pedido = new Promise(res => {
+      const fim = v => { clearTimeout(t); window.removeEventListener('message', h); _pedido = null; res(v); };
+      const t = setTimeout(() => fim(null), 5000);
+      function h(e){
+        if(e.source !== window.parent || !e.data || e.data.type !== 'transcritor:sso-token') return;
+        _token = e.data.token; fim(_token);
+      }
+      window.addEventListener('message', h);
+      window.parent.postMessage({ type: 'transcritor:sso-request' }, '*');
+    });
+    return _pedido;
+  }
+  async function api(url, opts = {}){
+    if(NO_CLAVIS && !_token) await pedirToken();
+    const ir = () => fetch(url, { ...opts, headers: { ...(opts.headers || {}), ...(_token ? { Authorization: 'Bearer ' + _token } : {}) } });
+    let r = await ir();
+    if(r.status === 401 && NO_CLAVIS){ _token = null; await pedirToken(); r = await ir(); }
+    _semAcesso = r.status === 403;
+    return r;
+  }
+
   async function runTranscricao(){
     const url = document.getElementById('urlInput').value.trim();
     if(!url){ showError('Cole o link do vídeo primeiro.'); return; }
@@ -186,7 +214,7 @@
     const finish = ()=>{ clearInterval(elapsedTimer); document.getElementById('processing').classList.add('hidden'); btn.disabled=false; btn.classList.remove('cursor-not-allowed'); };
 
     try {
-      const resp = await fetch('/api/transcrever', {
+      const resp = await api('/api/transcrever', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ url, modelo: document.getElementById('modelSel').value, idioma: document.getElementById('langSel').value, fonte: activeFonte() })
       });
@@ -346,13 +374,13 @@
 
   async function loadHistory(){
     let hist = [];
-    try { hist = await (await fetch('/api/history')).json(); } catch(e){}
+    try { const r = await api('/api/history'); if(r.ok) hist = await r.json(); } catch(e){}
     const body = document.getElementById('historyBody');
     if(!hist.length){
       body.innerHTML = `<div class="flex flex-col items-center justify-center py-10 sm:py-12 text-center px-4">
         <i data-lucide="captions" class="w-10 h-10 sm:w-12 sm:h-12 text-nv-faint"></i>
-        <div class="mt-3 text-[14px] sm:text-[15px] font-semibold text-nv-ink">Nenhuma transcrição ainda</div>
-        <div class="text-[12px] sm:text-[13px] text-nv-soft mt-1">Cole um link acima e clique em Transcrever para começar.</div>
+        <div class="mt-3 text-[14px] sm:text-[15px] font-semibold text-nv-ink">${NO_CLAVIS ? (_semAcesso ? 'Transcritor não liberado para o seu login' : 'Nenhuma transcrição ainda') : 'Histórico só pelo Clavis'}</div>
+        <div class="text-[12px] sm:text-[13px] text-nv-soft mt-1">${NO_CLAVIS ? 'Cole um link acima e clique em Transcrever para começar.' : 'Abra pelo Clavis (Ferramentas › Transcritor) para ver o seu histórico.'}</div>
       </div>`;
       lucide.createIcons(); return;
     }
@@ -394,8 +422,8 @@
   function openHist(i){ const h=window._hist[i]; if(h) showResult(h); }
 
   async function clearHistory(){
-    if(!confirm('Apagar todo o histórico?')) return;
-    await fetch('/api/history', {method:'DELETE'});
+    if(!confirm('Apagar todo o seu histórico?')) return;
+    await api('/api/history', {method:'DELETE'});
     loadHistory();
     toast('Histórico limpo');
   }

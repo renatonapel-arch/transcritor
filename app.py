@@ -10,6 +10,7 @@ faz polling em GET /api/job/{id}. Assim vídeos longos não estouram o timeout d
 proxy. Histórico e modelos ficam em DATA_DIR (volume persistente na VPS).
 """
 
+import hashlib
 import json
 import os
 import re
@@ -17,10 +18,12 @@ import tempfile
 import time
 import glob
 import threading
+import urllib.error
+import urllib.request
 import uuid
 from datetime import datetime
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
@@ -30,6 +33,13 @@ DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
 os.makedirs(DATA_DIR, exist_ok=True)
 HISTORY_FILE = os.path.join(DATA_DIR, "history.json")
 CODIGO_FILE = os.path.join(DATA_DIR, "contador_codigo.json")
+
+# Histórico por pessoa: quem abre pelo Clavis Renato manda o token do Clavis (Authorization:
+# Bearer), conferido em /auth/me. Sem token (robôs, chamada direta) = dono padrão (Renato).
+# Item antigo sem "dono" também é do dono padrão.
+CLAVIS_ME_URL = os.environ.get("CLAVIS_ME_URL", "https://clavis-renato.napel.com.br/api/v1/auth/me")
+DONO_PADRAO = os.environ.get("DONO_PADRAO", "renato@napel.com.br").lower()
+LIMITE_POR_DONO = 500
 
 # modelos do whisper no volume persistente (não rebaixar a cada deploy)
 os.environ.setdefault("HF_HOME", os.path.join(DATA_DIR, "hf"))
@@ -41,6 +51,8 @@ _models = {}
 _model_lock = threading.Lock()
 _jobs = {}
 _jobs_lock = threading.Lock()
+_hist_lock = threading.Lock()
+_donos_cache = {}  # sha256(token) -> (expira_em, email ou "")
 # 1 transcrição por vez: protege a CPU compartilhada da VPS
 _work_sema = threading.Semaphore(1)
 
@@ -157,11 +169,59 @@ def ler_historico():
     return []
 
 
-def salvar_no_historico(item: dict):
-    hist = ler_historico()
-    hist.insert(0, item)
+def dono_do_item(h: dict) -> str:
+    return (h.get("dono") or DONO_PADRAO).lower()
+
+
+def _gravar_historico(hist: list):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(hist[:500], f, ensure_ascii=False, indent=2)
+        json.dump(hist, f, ensure_ascii=False, indent=2)
+
+
+def salvar_no_historico(item: dict):
+    with _hist_lock:
+        hist = ler_historico()
+        hist.insert(0, item)
+        por_dono, mantidos = {}, []
+        for h in hist:  # limite de 500 por pessoa: um não empurra o histórico do outro
+            d = dono_do_item(h)
+            por_dono[d] = por_dono.get(d, 0) + 1
+            if por_dono[d] <= LIMITE_POR_DONO:
+                mantidos.append(h)
+        _gravar_historico(mantidos)
+
+
+def dono_da_requisicao(request: Request):
+    """E-mail do usuário do Clavis dono da requisição; None se veio sem token."""
+    auth = request.headers.get("authorization", "")
+    if not auth.lower().startswith("bearer "):
+        return None
+    token = auth[7:].strip()
+    chave = hashlib.sha256(token.encode()).hexdigest()
+    agora = time.time()
+    cache = _donos_cache.get(chave)
+    if cache and cache[0] > agora:
+        email = cache[1]
+    else:
+        req = urllib.request.Request(CLAVIS_ME_URL, headers={"Authorization": f"Bearer {token}"})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+                u = json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                raise HTTPException(401, "Login do Clavis vencido ou inválido")
+            raise HTTPException(502, "Clavis indisponível para conferir o login")
+        except Exception:
+            raise HTTPException(502, "Clavis indisponível para conferir o login")
+        mods = u.get("allowed_modules")
+        liberado = (u.get("role") == "admin" and mods is None) or "transcritor" in (mods or [])
+        email = (u.get("email") or "").lower() if liberado and u.get("active", True) else ""
+        if len(_donos_cache) > 1000:
+            _donos_cache.clear()
+        _donos_cache[chave] = (agora + 60, email)
+    if not email:
+        raise HTTPException(403, "Transcritor não liberado para este usuário")
+    return email
 
 
 def _ler_contador_codigo():
@@ -433,7 +493,7 @@ def buscar_comentarios(url: str, count: int = 20) -> dict:
         return {"comentarios": [], "comentarios_total": None, "comentarios_incompleto": None}
 
 
-def _processar(jid, url, modelo, idioma, fonte):
+def _processar(jid, url, modelo, idioma, fonte, dono):
     with _work_sema:
         t0 = time.time()
         with tempfile.TemporaryDirectory() as tmp:
@@ -482,6 +542,7 @@ def _processar(jid, url, modelo, idioma, fonte):
             comentarios_info = buscar_comentarios(url)
         item = {
             "codigo": proximo_codigo(),
+            "dono": dono,
             "url": url, "fonte": fonte, "modelo": modelo,
             "idioma": detected_lang, "confianca": round(float(detected_prob) * 100),
             "duracao_audio": round(dur), "palavras": len(texto.split()),
@@ -527,25 +588,33 @@ async def upload_cookies(request: Request):
 
 
 @app.get("/api/history")
-def api_history():
-    return ler_historico()
+def api_history(request: Request):
+    dono = dono_da_requisicao(request)
+    if dono is None:
+        return []  # histórico só pelo Clavis: cada um vê só o seu
+    return [h for h in ler_historico() if dono_do_item(h) == dono]
 
 
 @app.delete("/api/history")
-def api_clear_history():
-    if os.path.exists(HISTORY_FILE):
-        os.remove(HISTORY_FILE)
+def api_clear_history(request: Request):
+    dono = dono_da_requisicao(request)
+    if dono is None:
+        raise HTTPException(401, "Abra pelo Clavis para limpar o seu histórico")
+    with _hist_lock:
+        hist = ler_historico()
+        _gravar_historico([h for h in hist if dono_do_item(h) != dono])
     return {"ok": True}
 
 
 @app.post("/api/transcrever")
-def api_transcrever(req: TranscReq):
+def api_transcrever(req: TranscReq, request: Request):
+    dono = dono_da_requisicao(request) or DONO_PADRAO
     if not (req.url or "").strip():
         return JSONResponse({"erro": "Informe o link do vídeo."}, status_code=400)
     jid = uuid.uuid4().hex[:12]
     set_job(jid, status="fila", criado=time.time())
     threading.Thread(target=_processar,
-                     args=(jid, req.url.strip(), req.modelo, req.idioma, req.fonte),
+                     args=(jid, req.url.strip(), req.modelo, req.idioma, req.fonte, dono),
                      daemon=True).start()
     return {"job_id": jid}
 
